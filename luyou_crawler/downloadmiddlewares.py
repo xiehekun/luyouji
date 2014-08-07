@@ -4,6 +4,10 @@
 
 import random
 from scrapy.contrib.downloadermiddleware.useragent import UserAgentMiddleware
+from scrapy import log
+import threading
+import settings
+import time
 
 class RotateUserAgentMiddleware(UserAgentMiddleware):
     """
@@ -55,3 +59,44 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):
         ua = self._user_agent(spider)
         if ua:
             request.headers.setdefault('User-Agent', ua)
+
+class ProxiesMiddleware():
+
+    mutex = threading.Lock()
+    fetch_proxy_interval = 60
+    spider_fetch_proxy_intervals = {}
+
+    def process_request(self, request, spider):
+        if settings.dont_proxy:
+            return
+        if request.meta and 'dont_proxy' in request.meta and request.meta['dont_proxy']:
+            return
+        if not hasattr(spider, '_set_proxies'):
+            return
+        n = time.time()
+        if not spider.name in self.spider_fetch_proxy_intervals or (n - self.spider_fetch_proxy_intervals[spider.name]) >= self.fetch_proxy_interval:
+            if self.mutex.acquire(10):
+                if not spider.name in self.spider_fetch_proxy_intervals or (n - self.spider_fetch_proxy_intervals[spider.name]) >= self.fetch_proxy_interval:
+                    spider._set_proxies()
+                    self.spider_fetch_proxy_intervals[spider.name] = n
+            self.mutex.release()
+        # Don't overwrite with a random one (server-side state for IP)
+        if 'proxy' in request.meta:
+            return
+
+        proxy_address = random.choice(spider.proxies)
+
+        request.meta['proxy'] = proxy_address
+        log.msg('proxy(%s) %s for spider %s.' % (proxy_address, request._get_url(), str(spider)))
+
+    def process_exception(self, request, exception, spider):
+        if not 'proxy' in request.meta:
+            return
+        proxy = request.meta['proxy']
+        request.meta.pop('proxy')
+        log.msg('Removing failed proxy <%s> for spider %s in url %s, %d proxies left' % (
+                    proxy, str(spider), request._get_url(), len(spider.proxies)))
+        try:
+            spider.proxies.remove(proxy)
+        except:
+            pass

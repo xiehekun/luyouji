@@ -27,6 +27,8 @@ ITEM_PIPELINES = {
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.contrib.downloadermiddleware.useragent.UserAgentMiddleware': None,
     'downloadmiddlewares.RotateUserAgentMiddleware':400,
+    'scrapy.contrib.downloadermiddleware.httpproxy.HttpProxyMiddleware' : None,
+    'downloadmiddlewares.ProxiesMiddleware' : 750
 }
 
 IMAGES_STORE = '/root/luyou/imgs'
@@ -120,7 +122,7 @@ mfw_satrt_urls_info = {\
                         }, \
                         '重庆' : {\
                             'url' : 'http://www.mafengwo.cn/travel-scenic-spot/mafengwo/10208.html', \
-                            'type' : 0\
+                            'type' : 1\
                         }, \
                         '贵州' : {\
                             'url' : 'http://www.mafengwo.cn/travel-scenic-spot/mafengwo/14103.html', \
@@ -225,3 +227,5 @@ mail_warning = True
 warning_email = '286116936@qq.com'
 
 anti_crawler_sleep_time = 12 * 60 * 60
+
+dont_proxy = False

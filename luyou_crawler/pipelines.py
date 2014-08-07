@@ -60,7 +60,7 @@ class LuyouImagesPipeline(ImagesPipeline):
 
     def get_media_requests(self, item, info):
         for x in item.get(self.IMAGES_URLS_FIELD, []):
-            yield Request(url=x, headers={'Referer' : x}, meta={'i_id' : item['_id']})
+            yield Request(url=x, headers={'Referer' : x}, meta={'i_id' : item['_id'], 'dont_proxy' : True})
 
     def item_completed(self, results, item, info):
         return ImagesPipeline.item_completed(self, results, item, info)

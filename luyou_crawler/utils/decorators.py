@@ -23,7 +23,7 @@ def check_item(cls):
     return wrapper
 
 mutex = threading.Lock()
-def handle_err_and_sleep(min_secs=1, max_secs=3):
+def handle_err_and_sleep(min_secs=1, max_secs=3, sleep=True):
     def wrapper(fn):
         def _handle(*args, **kwargs):
             crawler = args[0]
@@ -46,10 +46,11 @@ def handle_err_and_sleep(min_secs=1, max_secs=3):
                     results = fn(*args, **kwargs)
                     if results:
                         for res in results:
-                            i = random.randint(min_secs, max_secs)
-                            time.sleep(i)
+                            if sleep:
+                                i = random.randint(min_secs, max_secs)
+                                time.sleep(i)
+                                log.msg('in %s.%s sleep %ds for url: %s' % (str(crawler), str(fn.func_name), i, str(resp._get_url())), _level=log.DEBUG)
                             yield res
-                            log.msg('in %s.%s sleep %ds for url: %s' % (str(crawler), str(fn.func_name), i, str(resp._get_url())), _level=log.DEBUG)
             except NoNodeParsed, ex:
                 log.msg('no nodes been parsed, check html.', level=log.WARNING)
                 if settings.mail_warning:

@@ -10,7 +10,7 @@ from scrapy.spider import Spider
 import exception
 import settings
 from scrapy.http.request import Request
-from utils import item_generators, cfgs, decorators
+from utils import item_generators, cfgs, decorators, proxies
 import re
 from scrapy.selector import Selector
 import utils
@@ -26,16 +26,28 @@ class MFW(Spider):
         self.domain = 'http://www.mafengwo.cn'
         self.start_urls = [self.domain]
         self.province_regions_url_pattern = 'http://www.mafengwo.cn/gonglve/sg_ajax.php?sAct=getMapData&iMddid=%s&iType=3&iPage=1'
-        self.region_url_pattern = 'http://www.mafengwo.cn/travel-scenic-spot/mafengwo/%s.html'
-        self.point_url_pattern = 'http://www.mafengwo.cn/%s/%s/gonglve.html'
+
+        self.point_types = {
+                            settings.mfw_region_crawl_jd : '3',
+                            settings.mfw_region_crawl_cy : '1',
+                            settings.mfw_region_crawl_gw : '4'
+                            }
+        self.region_points_url_pattern = 'http://www.mafengwo.cn/gonglve/sg_ajax.php?sAct=getMapData&iMddid=%s&iType=%s&iPage=%d'
+
+#         self.points_url_pattern = 'http://www.mafengwo.cn/%s/%s/gonglve.html'
+        self.point_url_pattern = 'http://www.mafengwo.cn/poi/%s.html'
 #         self.point_pics_url_pattern = 'http://www.mafengwo.cn/photo/poi/%s.html'
-        self.point_pics_url_pattern = 'http://www.mafengwo.cn/mdd/ajax_photolist.php?act=getPoiPhotoList&mddid=%s&poiid=%s&page=1'
+#         self.point_pics_url_pattern = 'http://www.mafengwo.cn/mdd/ajax_photolist.php?act=getPoiPhotoList&mddid=%s&poiid=%s&page=1'
         self.big_pic_size = '.w665_500.'
         self.small_pic_size = '.w235.'
+        self.smallests_pic_size = '.w135.'
         self.anti_crawler_warning = False
         self.anti_crawler_kw = u'验证码'
 
-    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs)
+    def _set_proxies(self):
+        self.proxies = proxies.proxies_fetch()
+
+    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=False)
     def parse(self, resp):
         item = item_generators.gene_country('亚洲', 'Asia', '中国', 'China')
         c_id = str(item['_id'])
@@ -63,10 +75,13 @@ class MFW(Spider):
                 resp.meta['c_id'] = c_id
                 for p in settings.mfw_region_crawl_points:
                     resp.meta['point_type'] = p
-                    yield Request(self.point_url_pattern % (p, mfw_id), meta=resp.meta, callback=self.parse_region_points)
+                    resp.meta['curr_page'] = 1
+                    resp.meta['point_url_type'] = self.point_types[p]
+                    yield Request(self.region_points_url_pattern % (mfw_id, self.point_types[p], 1), meta=resp.meta, callback=self.parse_region_points)
+#                     yield Request(self.points_url_pattern % (p, mfw_id), meta=resp.meta, callback=self.parse_region_points)
         yield None
 
-    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs)
+    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=False)
     def parse_province(self, resp):
         regions = utils._json(o=resp._get_body(), dumps=False)['list']
         for region in regions:
@@ -86,50 +101,65 @@ class MFW(Spider):
             resp.meta['region_id'] = region_id
             for p in settings.mfw_region_crawl_points:
                 resp.meta['point_type'] = p
-                yield Request(self.point_url_pattern % (p, mfw_region_id), meta=resp.meta, callback=self.parse_region_points)
+                resp.meta['curr_page'] = 1
+                resp.meta['point_url_type'] = self.point_types[p]
+                yield Request(self.region_points_url_pattern % (mfw_region_id, self.point_types[p], 1), meta=resp.meta, callback=self.parse_region_points)
+#                 yield Request(self.points_url_pattern % (p, mfw_region_id), meta=resp.meta, callback=self.parse_region_points)
 
-    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs)
+    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=True)
     def parse_region_points(self, resp):
-        hxs = Selector(resp)
-        point_nodes = hxs.xpath('//div[@class="m-recList"]//ul[@class="poi-list"]//div[@class="title"]//a')
-        if not point_nodes:
-            raise exception.NoNodeParsed('no point nodes been parsed.')
+        points = utils._json(o=resp._get_body(), dumps=False)['list']
+        if points:
+            for point in points:
+                mfw_point_id = str(point['id'])
+                zh_name = point['name']
+                coordinate = ''
+                if 'lat' in point:
+                    coordinate = str(point['lat']) + ',' + str(point['lng'])
+                img_urls = []
+                if 'img_link' in point:
+                    img_urls = [point['img_link'].replace(self.smallests_pic_size, self.big_pic_size)]
 
-        for point_node in point_nodes:
-            point_url = self.domain + point_node.xpath('@href').extract()[0]
-            point_name = point_node.xpath('text()').extract()[0]
-            resp.meta['point_name'] = point_name
-            yield Request(point_url, meta=resp.meta, callback=self.parse_point)
+#                 resp.meta['mfw_point_id'] = mfw_point_id
+                resp.meta['mfw_point_zh_name'] = zh_name
+                resp.meta['mfw_point_coordinate'] = coordinate
+                resp.meta['mfw_point_img_urls'] = img_urls
+#                 resp.meta['dont_proxy'] = True
+                yield Request(url=self.point_url_pattern % mfw_point_id, callback=self.parse_point, meta=resp.meta)
 
-        next_page_url = hxs.xpath('//a[@class="ti next"]/@href').extract()
-        if next_page_url:
-            yield Request(self.domain + next_page_url[0], meta=resp.meta, callback=self.parse_region_points)
+#             resp.meta.pop('dont_proxy')
+            next_page = resp.meta['curr_page'] + 1
+            resp.meta['curr_page'] = next_page
+            yield Request(url=self.region_points_url_pattern % (resp.meta['mfw_region_id'], self.point_types[resp.meta['point_type']], next_page), callback=self.parse_region_points, meta=resp.meta)
 
-    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs)
+
+
+
+
+#         hxs = Selector(resp)
+#         point_nodes = hxs.xpath('//div[@class="m-recList"]//ul[@class="poi-list"]//div[@class="title"]//a')
+#         if not point_nodes:
+#             raise exception.NoNodeParsed('no point nodes been parsed.')
+#
+#         for point_node in point_nodes:
+#             point_url = self.domain + point_node.xpath('@href').extract()[0]
+#             point_name = point_node.xpath('text()').extract()[0]
+#             resp.meta['point_name'] = point_name
+#             yield Request(point_url, meta=resp.meta, callback=self.parse_point)
+#
+#         next_page_url = hxs.xpath('//a[@class="ti next"]/@href').extract()
+#         if next_page_url:
+#             yield Request(self.domain + next_page_url[0], meta=resp.meta, callback=self.parse_region_points)
+
+    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=False)
     def parse_point(self, resp):
         region_id = resp.meta['region_id']
-        mfw_region_id = resp.meta['mfw_region_id']
-        pics_url = self.point_pics_url_pattern % (mfw_region_id, re.search('http://www.mafengwo.cn/poi/([0-9]+).html', resp._get_url()).group(1))
-
         country_id = resp.meta['c_id']
-        zh_name = resp.meta['point_name']
+        zh_name = resp.meta['mfw_point_zh_name']
         _type = cfgs.mfw_point_db_name(resp.meta['point_type'])
         point_id = utils._md5(region_id + (zh_name) + _type)
-        resp.meta['point_id'] = point_id
-
-        yield Request(url=pics_url, callback=self.parse_point_pics, meta=resp.meta)
-
-        content = resp._get_body()
-        m = re.search("lat: parseFloat\('([0-9.]+)'\)", content)
-        if not m:
-            coordinate = ""
-        else:
-            lat = m.group(1)
-            lng = re.search("lng: parseFloat\('([0-9.]+)'\)", content).group(1)
-            coordinate = '%s,%s' %(lat, lng)
 
         hxs = Selector(resp)
-
         detail_title_nodes = hxs.xpath("//div[@id='comment_header']//div[@class='bd']/h3")
         detail_content_nodes = hxs.xpath("//div[@id='comment_header']//div[@class='bd']/p")
         desc = ''
@@ -143,7 +173,11 @@ class MFW(Spider):
                     continue
                 details[k] = [txt.strip() for txt in detail_content_nodes[i].xpath('.//child::text()').extract()]
 
-        yield item_generators.gene_point(point_id, country_id, region_id, '', zh_name, coordinate, desc, details, _type)
+        yield item_generators.gene_point(point_id, country_id, region_id, '', zh_name, resp.meta['mfw_point_coordinate'], desc, details, _type)
+
+        img_urls = resp.meta['mfw_point_img_urls']
+        if img_urls:
+            yield item_generators.gene_point_imgs(point_id, img_urls)
 
         comments = hxs.xpath('//div[@class="comment-item"]//div[@class="c-content"]/p/text()').extract()
         if comments:
@@ -152,7 +186,53 @@ class MFW(Spider):
         if not details and not desc:
             raise exception.NoNodeParsed('no details nodes been parsed.')
 
-    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs)
+
+#         region_id = resp.meta['region_id']
+#         mfw_region_id = resp.meta['mfw_region_id']
+#         pics_url = self.point_pics_url_pattern % (mfw_region_id, re.search('http://www.mafengwo.cn/poi/([0-9]+).html', resp._get_url()).group(1))
+#
+#         country_id = resp.meta['c_id']
+#         zh_name = resp.meta['point_name']
+#         _type = cfgs.mfw_point_db_name(resp.meta['point_type'])
+#         point_id = utils._md5(region_id + (zh_name) + _type)
+#         resp.meta['point_id'] = point_id
+#
+#         yield Request(url=pics_url, callback=self.parse_point_pics, meta=resp.meta)
+#
+#         content = resp._get_body()
+#         m = re.search("lat: parseFloat\('([0-9.]+)'\)", content)
+#         if not m:
+#             coordinate = ""
+#         else:
+#             lat = m.group(1)
+#             lng = re.search("lng: parseFloat\('([0-9.]+)'\)", content).group(1)
+#             coordinate = '%s,%s' %(lat, lng)
+#
+#         hxs = Selector(resp)
+#
+#         detail_title_nodes = hxs.xpath("//div[@id='comment_header']//div[@class='bd']/h3")
+#         detail_content_nodes = hxs.xpath("//div[@id='comment_header']//div[@class='bd']/p")
+#         desc = ''
+#         details = {}
+#         for i in xrange(0, len(detail_title_nodes)):
+#             k = detail_title_nodes[i].xpath('./text()').extract()[0].strip()
+#             if k == u'简介':
+#                 desc = detail_content_nodes[i].xpath('./text()').extract()
+#             else:
+#                 if k == u'相关预订':
+#                     continue
+#                 details[k] = [txt.strip() for txt in detail_content_nodes[i].xpath('.//child::text()').extract()]
+#
+#         yield item_generators.gene_point(point_id, country_id, region_id, '', zh_name, coordinate, desc, details, _type)
+#
+#         comments = hxs.xpath('//div[@class="comment-item"]//div[@class="c-content"]/p/text()').extract()
+#         if comments:
+#             yield item_generators.gene_point_comments(point_id, comments, _type)
+#
+#         if not details and not desc:
+#             raise exception.NoNodeParsed('no details nodes been parsed.')
+
+    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=True)
     def parse_point_pics(self, resp):
         hxs = Selector(resp)
         img_urls = hxs.xpath('//img/@src').extract()
