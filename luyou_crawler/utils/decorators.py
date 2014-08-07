@@ -29,14 +29,18 @@ def handle_err_and_sleep(min_secs=1, max_secs=3, sleep=True):
             crawler = args[0]
             resp = args[1]
             try:
+                if 'proxy' in resp.meta:
+                    sleep_time = settings.anti_crawler_sleep_time / 10
+                else:
+                    sleep_time = settings.anti_crawler_sleep_time
                 if hasattr(crawler, 'anti_crawler_kw') and crawler.anti_crawler_kw in resp._get_body():
                     if not crawler.anti_crawler_warning and mutex.acquire(10):
                         if not crawler.anti_crawler_warning:
                             crawler.anti_crawler_warning = True
                         mutex.release()
-                        utils.send_mail(settings.warning_email, 'anti luyou_crawler warning.', 'in %s.%s for url %s, got anti keyword %s in html, crawler will sleep %d seconds.' % (str(crawler), str(fn.func_name), str(resp._get_url()), crawler.anti_crawler_kw, settings.anti_crawler_sleep_time))
+                        utils.send_mail(settings.warning_email, 'anti luyou_crawler warning.', 'in %s.%s for url %s, got anti keyword %s in html, crawler will sleep %d seconds.' % (str(crawler), str(fn.func_name), str(resp._get_url()), crawler.anti_crawler_kw, sleep_time))
                 if hasattr(crawler, 'anti_crawler_warning') and crawler.anti_crawler_warning:
-                    time.sleep(settings.anti_crawler_sleep_time)
+                    time.sleep(sleep_time)
                     if crawler.anti_crawler_warning and mutex.acquire(10):
                         if crawler.anti_crawler_warning:
                             crawler.anti_crawler_warning = False
@@ -56,6 +60,6 @@ def handle_err_and_sleep(min_secs=1, max_secs=3, sleep=True):
                 if settings.mail_warning:
                     utils.send_mail(settings.warning_email, 'luyou_crawler warning.', 'in %s.%s for url %s, %s' % (str(crawler), str(fn.func_name), str(resp._get_url()), str(ex)))
             except:
-                log.msg(message=traceback.format_exc(), _level=log.ERROR)
+                log.msg(message=traceback.format_exc() + '\n for url : ' + resp._get_url(), _level=log.ERROR)
         return _handle
     return wrapper

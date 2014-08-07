@@ -226,6 +226,6 @@ mfw_region_crawl_points = [mfw_region_crawl_jd, mfw_region_crawl_cy, mfw_region_
 mail_warning = True
 warning_email = '286116936@qq.com'
 
-anti_crawler_sleep_time = 12 * 60 * 60
+anti_crawler_sleep_time = 3 * 60 * 60
 
 dont_proxy = False

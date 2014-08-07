@@ -106,7 +106,7 @@ class MFW(Spider):
                 yield Request(self.region_points_url_pattern % (mfw_region_id, self.point_types[p], 1), meta=resp.meta, callback=self.parse_region_points)
 #                 yield Request(self.points_url_pattern % (p, mfw_region_id), meta=resp.meta, callback=self.parse_region_points)
 
-    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=True)
+    @decorators.handle_err_and_sleep(min_secs=crawl_min_secs, max_secs=crawl_max_secs, sleep=False)
     def parse_region_points(self, resp):
         points = utils._json(o=resp._get_body(), dumps=False)['list']
         if points:

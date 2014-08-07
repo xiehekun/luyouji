@@ -63,7 +63,7 @@ class RotateUserAgentMiddleware(UserAgentMiddleware):
 class ProxiesMiddleware():
 
     mutex = threading.Lock()
-    fetch_proxy_interval = 60
+    fetch_proxy_interval = 30
     spider_fetch_proxy_intervals = {}
 
     def process_request(self, request, spider):
