@@ -1,0 +1,24 @@
+{
+        "_id" : "92ede6c2911d481acbd3ef26386d38f4",
+        "region_id" : "dbe9b7282fb84001f8482ea8b781af5b",
+        "zh_name" : "",
+        "country_id" : "290d14d2cdb79ed954d78892ea08f287",
+        "en_name" : "Via Del Caffe",
+        "details" : {
+                "地址" : [
+                        "Bol'shaya Moskovskaya ulitsa, 12弗拉基米尔弗拉基米尔州 俄罗斯600000"
+                ],
+                "所属分类" : [
+                        "当地特色美食",
+                        "其他美食",
+                        "西餐"
+                ],
+                "到达方式" : [
+                        "弗拉基米尔金门要塞附近"
+                ]
+        },
+        "coordinate" : "56.126980,40.399441",
+        "desc" : [
+                "俄式菜肴、欧洲菜肴"
+        ]
+}

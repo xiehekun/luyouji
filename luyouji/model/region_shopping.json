@@ -1,0 +1,16 @@
+{
+        "_id" : "8e26787319ab0887691261a55183d5bc",
+        "region_id" : "b140ae7aec7a779f16ec3db9ffd4cdd8",
+        "zh_name" : "西顿集市",
+        "country_id" : "a462aa7eb810c8ebff4a38bcd76de440",
+        "en_name" : "Saida Souk",
+        "details" : {
+                "所属分类" : [
+                        "集市"
+                ]
+        },
+        "coordinate" : "33.562611,35.368729",
+        "desc" : [
+                "在中东看到的最有感觉的集市。"
+        ]
+}

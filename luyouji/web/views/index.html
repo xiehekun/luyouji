@@ -1,0 +1,245 @@
+﻿<style>
+    a.moreRoute {
+        width: 317px;
+        height: 58px;
+        padding: 140px 0 0;
+        font-size: 26px;
+        color: #fff;
+        text-align: center;
+        background: gray no-repeat 50% 20%;
+        cursor: pointer;
+    }
+</style>
+<link rel="stylesheet" type="text/css" href="/static/css/kalendae.css" />
+<script type="text/javascript" src="/static/js/kalendae.standalone.min.js"></script>
+<div class="wraper">
+    <div class="routeCons firstChild">
+        <a class="addNewRoute">
+            新建行程
+        </a>
+        <a></a>
+        <a></a>
+    </div>
+</div>
+<!--弹窗 start-->
+<div id="newAddBlack"></div>
+<div id="newAddCons">
+    <p class="title">
+        新建行程
+    </p>
+    <div class="newInfo">
+        <h3>标题</h3>
+        <input type="text" value="" name="plan_name" id="plan_name" />
+        <h3 class="mt20">行程时间</h3>
+        <div>
+            <span class="mr10" style="border : none;">
+                <input type="text" style="width: 100%;" readonly id="start_date">
+            </span>至<span class="ml10" style="border : none;">
+                <input type="text" style="width: 100%;" readonly id="end_date">
+            </span>
+        </div>
+    </div>
+    <div class="newBtn">
+        <a href="javascript:void(0);" onclick="new_plan();">确定</a>
+        <a class="newAddCancel" href="javascript:void(0);">取消</a>
+    </div>
+</div>
+<!--弹窗 end-->
+<script type="text/javascript">
+    $(".addNewRoute").click(function(){
+        $("#newAddBlack").show();
+        $("#newAddCons").show();
+    });
+
+    $(".newAddCancel").click(function(){
+        $("#newAddBlack").hide();
+        $("#newAddCons").hide();
+    });
+
+    var s_k = new Kalendae.Input('start_date', {
+            months:1,
+            format: 'YYYY-MM-DD',
+            direction: 'future',
+            directionScrolling: true,
+            subscribe: {
+                'date-clicked' : function(date, action){
+                    var _i = date['_i'];
+                    var end_date = $('#end_date').val();
+                    if (end_date && end_date < _i) {
+                        alert('结束日期不能小于开始日期');
+                        $('#end_date').focus();
+                    }
+                    $('#start_date').blur();
+                }
+            }
+        });
+    var e_k = new Kalendae.Input('end_date', {
+            months:1,
+            format: 'YYYY-MM-DD',
+            direction: 'future',
+            directionScrolling: true,
+            subscribe: {
+                'date-clicked' : function(date, action){
+                    var _i = date['_i'];
+                    var start_date = $('#start_date').val();
+                    if(start_date && _i < start_date) {
+                        alert('结束日期不能小于开始日期');
+                        return false;
+                    }
+                    $('#end_date').blur();
+                }
+            }
+        });
+    var _next_page = 1;
+    var _curr_page = 1;
+    var append_plan = function(doc) {
+        var last_plan_ul = $('.routeCons:last');
+        var lli = last_plan_ul.find('.addNewRoute, .routeNow, .routeOver').last().length;
+        var last_empty_li = last_plan_ul.find('.addNewRoute, .routeNow, .routeOver').last().next('a').get(0);
+        if (lli == 0) {
+            last_empty_li = last_plan_ul.find('a').get(0);
+        }
+        if (last_empty_li) {
+            if (doc) {
+                var end_date = doc['end_date'];
+                var start_date = doc['start_date'];
+                var days = daysBetween(end_date, start_date) + 1;
+                var curr_date = new Date().Format('yyyy-MM-dd');
+                var last_empty_li_clz = 'routeNow';
+                if (curr_date > end_date) {
+                    last_empty_li_clz = 'routeOver';
+                }
+                $(last_empty_li).removeClass().removeAttr('id').addClass(last_empty_li_clz).attr('href', '/plan/index/' + doc['_id'])
+                             .html('<em data-id="' + doc['_id'] + '" onclick="del_plan(this);return false;"></em>' +
+                                   '<div>' + doc['name'] + '</div>' +
+                                   '<p>' + start_date + "至" + end_date + '</p>' +
+                                   '<p>' + days + '天行程</p>');
+            } else {
+                $(last_empty_li).removeClass().attr('id', 'more_plans').addClass('moreRoute').html(
+                    '查看更多'
+                ).click(function(){
+                    get_plan_page(_next_page);
+                    _curr_page += 1;
+                });
+            }
+            return true;
+        } else {
+            $('div.wraper').append('<div class="routeCons"><a></a><a></a><a></a></div>');
+            return false;
+        }
+    };
+    var get_plan_page = function(curr_page) {
+        if (!curr_page) {
+            curr_page = 1;
+        }
+        $.get('/plan/page/' + curr_page, function(resp) {
+            var data = eval('(' + resp + ')');
+            var docs = data['docs'];
+            if (!docs) {
+                $('#more_plans').removeClass("moreRoute").removeAttr('id').html('');
+            } else {
+                var l = docs.length;
+                for (var i = 0; i < l ; i ++) {
+                    doc = docs[i];
+                    var r = append_plan(doc);
+                    if(!r) {
+                        append_plan(doc);
+                    }
+                }
+            }
+            var next_page = data['next_page'];
+            if (next_page) {
+                var r = append_plan();
+                if (!r) {
+                    append_plan();
+                }
+                _next_page = next_page;
+            } else {
+                $('#more_plans').removeClass("moreRoute").removeAttr('id').html('');
+            }
+        });
+    };
+    $(function() {
+        get_plan_page();
+    });
+
+    var refresh_plans = function(){
+        $('div.routeCons').remove();
+        $('div.wraper').append('<div class="routeCons firstChild">' +
+                               '<a class="addNewRoute">'  +
+                               '新建行程' +
+                               '</a>' +
+                               '<a></a>' +
+                               '<a></a>' +
+                               '</div>');
+        $(".addNewRoute").click(function(){
+            $("#newAddBlack").show();
+            $("#newAddCons").show();
+        });
+        for(var i = 1; i < _curr_page + 1; i ++) {
+            get_plan_page(i);
+        }
+    };
+
+    var new_plan = function(){
+        var plan_name = $('#plan_name').val();
+        if (!plan_name) {
+            alert('行程名称不能为空');
+            return;
+        }
+        if(plan_name.length > 20) {
+            alert('行程名称长度不能超过20个字');
+            return;
+        }
+        var start_date = $('#start_date').val();
+        var end_date = $('#end_date').val();
+        if(!start_date || !end_date) {
+            alert('行程的起止时间不能为空');
+            return;
+        }
+        if(end_date < start_date) {
+            alert('行程的结束日期不能小于开始日期');
+            return;
+        }
+        $.post('/plan/new', {'plan_name' : plan_name, 'start_date' : start_date, 'end_date' : end_date}, function(resp){
+            var data = eval('(' + resp + ')');
+            var succ = data['succ'];
+            var code = data['code'];
+            if (succ) {
+                //window.location.reload();
+                $(".newAddCancel").trigger('click');
+                $('#plan_name').val('');
+                $('#start_date').val('');
+                $('#end_date').val('');
+                refresh_plans();
+            } else {
+                if (!code) {
+                    alert("创建失败, 未知错误.");
+                    return;
+                }
+                switch (code) {
+                    case 0:
+                        alert('行程名称不能为空');
+                        break;
+                    case 1:
+                        alert('行程的起止时间不能为空');
+                        break;
+                    case 2:
+                        alert('行程的结束日期不能小于开始日期');
+                        break;
+                    default:
+                        alert("创建失败, 未知错误.");
+                        break;
+                }
+            }
+        });
+    };
+    var del_plan = function(emo){
+        if(confirm('确定要删除这项行程吗?')) {
+            var p_id = $(emo).attr('data-id');
+            $.get('/plan/del/' + p_id, function(resp){
+                refresh_plans();
+            });
+        }
+    };
+</script>

@@ -1,0 +1,397 @@
+<style>
+    .regOkBtn {
+        background-color: #66bcff;
+        color: white;
+    }
+    #pwdBlack {
+        position: fixed;
+        left: 0;
+        top: 0;
+        display: none;
+        width: 100%;
+        height: 100%;
+        background-color: #333;
+        filter: Alpha(opacity=50);
+        -moz-opacity: .5;
+        opacity: 0.5;
+        z-index: 1;
+    }
+    #pwdMain {
+        width: 527px !important;
+        position: fixed;
+        left: 25%;
+        top: 30%;
+        display: none;
+        width: 536px;
+        height: 250px;
+        background-color: #fff;
+        z-index: 2;
+    }
+    #pwdMain .title {
+        padding: 10px 20px;
+        font-size: 26px;
+        background-color: #66bcff;
+        color: #fff;
+    }
+    #pwdMain .title em {
+        position: absolute;
+        right: 12px;
+        top: 6px;
+        cursor: pointer;
+    }
+    .pwdOkBtn {
+        display: block;
+        width: 175px;
+        height: 57px;
+        margin: 10px auto 0;
+        text-align: center;
+        line-height: 57px;
+        border: 2px solid;
+        color: #66bcff;
+        font-size: 20px;
+        background-color: #66bcff;
+        color: white;
+    }
+    #qqLoginBtn a img {
+        display: none;
+    }
+    #loginSina div a img {
+        display: none;
+    }
+</style>
+<!--<?py _context['weibo_xmlns'] = '"http://open.weibo.com/wb"' ?>-->
+<div class="wraper">
+    <div class="loginCons">
+        <table width="100%" cellpadding="0" cellspacing="0" id="login_tab">
+            <tbody>
+                <tr>
+                    <th>账号:</th>
+                    <td>
+                    <input type="text" name="user_name" value="" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>密码:</th>
+                    <td>
+                    <input type="password" name="pass_word" value="" />
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2"><a class="loginBtn" href="javascript:void(0);" onclick="login();">登录</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="regCons">
+        <a id="regPopup" href="javascript:void(0);">账号注册</a>
+        <a id="pwdBack"href="javascript:void(0);">忘记密码</a>
+        <script type="text/javascript">
+            var third_login = function(d) {
+                $.post("/auth/thirdlogin?" + new Date().getTime(), d, function(resp) {
+                    var data = eval('(' + resp + ')');
+                    if (data['succ']) {
+                        window.location.href = '/';
+                    } else {
+                        var code = data['code'];
+                        switch(code) {
+                            case 10:
+                                alert('授权登陆失败');
+                                break;
+                            default:
+                                alert('授权登陆失败');
+                                break;
+                        }
+                    }
+                });
+            };
+        </script>
+        <?py qqAppId = '101143265' ?>
+        <script type="text/javascript" src="http://qzonestyle.gtimg.cn/qzone/openapi/qc_loader.js" data-appid="${qqAppId}" data-redirecturi="http://luyouji.sonovel.com/auth/login" data-callback="true" charset="utf-8"></script>
+        <a id="qqLoginBtn" href="javascript:void(0);"></a>
+        <script type="text/javascript">
+            var interval = setInterval(function() {
+                if ($('#qqLoginBtn a img') && $('#qqLoginBtn a img').length > 0) {
+                    $('#qqLoginBtn a img').attr('src', '/static/css/img/loginQQ.png').show();
+                    clearInterval(interval);
+                }
+            }, 10);
+            //调用QC.Login方法，指定btnId参数将按钮绑定在容器节点中
+            QC.Login({
+                btnId : "qqLoginBtn",
+            }, function(reqData, opts) {//登录成功
+                var nickname = reqData.nickname;
+                var figureurl = reqData.figureurl;
+                if (QC.Login.check()) {
+                    QC.Login.getMe(function(openId, accessToken) {
+                        var interval2 = setInterval(function() {
+                            if ($('#qqLoginBtn span') && $('#qqLoginBtn span').length > 0) {
+                                $('#qqLoginBtn').children().remove();
+                                $('#qqLoginBtn').append('<img src="/static/css/img/loginQQ.png" />');
+                                clearInterval(interval2);
+                            }
+                        }, 10);
+                        third_login({
+                            'type' : 'qq',
+                            'openId' : openId,
+                            'nickname' : nickname,
+                            'figureurl' : figureurl,
+                            'accessToken' : accessToken
+                        });
+                    });
+                }
+            });
+        </script>
+        <?py weiboAppKey = '3330961291' ?>
+        <script src="http://tjs.sjs.sinajs.cn/open/api/js/wb.js?appkey=${weiboAppKey}&debug=true" type="text/javascript" charset="utf-8"></script>
+        <a id="loginSina" href="javascript:void(0);"></a>
+        <script type="text/javascript">
+            var interval4 = setInterval(function() {
+                if ($('#loginSina div a img') && $('#loginSina div a img').length > 0) {
+                    $('#loginSina div a img').attr('src', '/static/css/img/loginSina.png').show();
+                    clearInterval(interval4);
+                }
+            }, 10);
+            WB2.anyWhere(function(W) {
+                W.widget.connectButton({
+                    id : "loginSina",
+                    type : '3,2',
+                    callback : {
+                        login : function(o) {//登录后的回调函数
+                            var interval5 = setInterval(function() {
+                                if ($('#loginSina div') && $('#loginSina div').length > 0) {
+                                    $('#loginSina').children().remove();
+                                    $('#loginSina').append('<img src="/static/css/img/loginSina.png" />');
+                                    clearInterval(interval5);
+                                }
+                            }, 10);
+                            var nickname = o.screen_name;
+                            var figureurl = o.profile_image_url;
+                            var openId = o.idstr;
+                            var accessToken = WB2['oauthData']['access_token'];
+                            third_login({
+                                'type' : 'weibo',
+                                'openId' : openId,
+                                'nickname' : nickname,
+                                'figureurl' : figureurl,
+                                'accessToken' : accessToken
+                            });
+                        }
+                    }
+                });
+            });
+        </script>
+    </div>
+</div>
+<!--弹窗 start-->
+<div id="regBlack"></div>
+<div id="regMain">
+    <p class="title">
+        账号注册<em><img src="/static/css/img/ico_del2.png" /></em>
+    </p>
+    <div class="newInfo">
+        <table class="mt20 registerInfo" width="100" cellpadding="0" cellspacing="0" id="regist_tab">
+            <tbody>
+                <tr>
+                    <th>账&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;号</th>
+                    <td>
+                    <input type="text" placeholder="输入注册邮箱" name="user_name" value="" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>密&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;码</th>
+                    <td>
+                    <input type="password" placeholder="输入密码" name="pass_word" value="" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>确认密码</th>
+                    <td>
+                    <input type="password" placeholder="确认密码" name="c_pass_word" value="" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <a class="regOkBtn" href="javascript:void(0);" onclick="regist();">确定</a>
+</div>
+<!--弹窗 end-->
+
+<!--弹窗 start-->
+<div id="pwdBlack"></div>
+<div id="pwdMain">
+    <p class="title">
+        找回密码<em><img src="/static/css/img/ico_del2.png" /></em>
+    </p>
+    <div class="newInfo">
+        <table class="mt20 registerInfo" width="100" cellpadding="0" cellspacing="0" id="regist_tab">
+            <tbody>
+                <tr>
+                    <th>账&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;号</th>
+                    <td>
+                    <input type="text" placeholder="输入邮箱格式的账号" name="user_name" value="" />
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <a class="pwdOkBtn" href="javascript:void(0);" onclick="find_pwd();">确定</a>
+</div>
+<!--弹窗 end-->
+<script type="text/javascript">
+    $(function() {
+        if (window.parent != window) {
+            window.parent.location.reload();
+        }
+    });
+    $("#regPopup").click(function() {
+        $("#regBlack").show();
+        $("#regMain").show();
+    });
+
+    $(".title em").click(function() {
+        $("#regBlack").hide();
+        $("#regMain").hide();
+        $("#pwdBlack").hide();
+        $("#pwdMain").hide();
+    });
+
+    var login = function() {
+        var user_name = $('#login_tab').find('input[name="user_name"]').val();
+        var pass_word = $('#login_tab').find('input[name="pass_word"]').val();
+        if (!user_name || !$.trim(user_name) || !pass_word || !$.trim(pass_word)) {
+            alert('账号或密码不能为空');
+            return;
+        }
+        $.post("/auth/login?" + new Date().getTime(), {
+            'user_name' : user_name,
+            'pass_word' : pass_word
+        }, function(resp) {
+            var data = eval('(' + resp + ')');
+            var succ = data['succ'];
+            var code = data['code'];
+            if (succ) {
+                window.document.location = "/";
+            } else {
+                if (!code) {
+                    alert("登陆失败, 未知错误.");
+                    return;
+                }
+                switch (code) {
+                    case 0:
+                        alert('账号或密码不能为空');
+                        break;
+                    case 2:
+                        alert('该用户不存在');
+                        break;
+                    case 4:
+                        alert('密码错误');
+                        break;
+                    default:
+                        alert("登陆失败, 未知错误.");
+                        break;
+                }
+            }
+        });
+    };
+
+    var regist = function() {
+        var user_name = $('#regist_tab').find('input[name="user_name"]').val();
+        var pass_word = $('#regist_tab').find('input[name="pass_word"]').val();
+        var c_pass_word = $('#regist_tab').find('input[name="c_pass_word"]').val();
+        if (!user_name || !$.trim(user_name) || !pass_word || !c_pass_word) {
+            alert('账号或密码不能为空');
+            return;
+        }
+        var emailreg = "^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$";
+        var rege = new RegExp(emailreg, 'g');
+        if (!rege.test(user_name)) {
+            alert('请输入一个合法的邮箱地址作为账号');
+            return;
+        }
+        if (pass_word.length < 6) {
+            alert('密码长度必须大于等于6个字符');
+            return;
+        }
+        if (pass_word != c_pass_word) {
+            alert('两次输入的密码不一致');
+            return;
+        }
+        $.post('/auth/regist?' + new Date().getTime(), {
+            'user_name' : user_name,
+            'pass_word' : pass_word,
+            'c_pass_word' : c_pass_word
+        }, function(resp) {
+            var data = eval('(' + resp + ')');
+            var succ = data['succ'];
+            var code = data['code'];
+            if (succ) {
+                alert('注册成功');
+                window.document.location = "/";
+            } else {
+                if (!code) {
+                    alert("注册失败, 未知错误.");
+                    return;
+                }
+                switch (code) {
+                    case 5:
+                        alert('账号名不是一个合法的邮箱地址');
+                        break;
+                    case 6:
+                        alert('密码不能为空');
+                        break;
+                    case 7:
+                        alert('两次输入的密码不一致');
+                        break;
+                    case 8:
+                        alert('该账号已存在');
+                        break;
+                    default:
+                        alert("注册失败, 未知错误.");
+                        break;
+                }
+            }
+        });
+    };
+
+    var find_pwd = function() {
+        var user_name = $('#pwdMain').find('input[name="user_name"]').val();
+        if (!user_name || !$.trim(user_name)) {
+            alert('账号不能为空');
+            return;
+        }
+        var emailreg = "^.+\\@(\\[?)[a-zA-Z0-9\\-\\.]+\\.([a-zA-Z]{2,3}|[0-9]{1,3})(\\]?)$";
+        var rege = new RegExp(emailreg, 'g');
+        if (!rege.test(user_name)) {
+            alert('请输入您注册时填写的邮箱格式的账号');
+            return;
+        }
+        $.post('/auth/findpwd', {
+            'user_name' : user_name
+        }, function(resp) {
+            var data = eval('(' + resp + ')');
+            if (data['succ']) {
+                alert('邮件发送成功, 请查看您的邮箱');
+                $('#pwdMain .title em').trigger('click');
+            } else {
+                var code = data['code'];
+                switch(code) {
+                    case 5:
+                        alert('请输入您注册时填写的邮箱格式的账号');
+                        break;
+                    case 2:
+                        alert('该用户不存在');
+                        break;
+                    default:
+                        alert('邮件发送失败');
+                        break;
+                }
+            }
+        });
+    };
+
+    $('#pwdBack').click(function() {
+        $("#pwdBlack").show();
+        $("#pwdMain").show();
+    });
+</script>
+

@@ -1,0 +1,71 @@
+/* CSS resset  @sf-express.com 2014-01-08 */
+@charset "utf-8";
+body, div, dl, dt, dd, ul, ol, li, h1, h2, h3, h4, h5, h6, pre, form, fieldset, input, textarea, p, blockquote, th, td { margin:0; padding:0; }
+body{background:#eee; font:14px/1.5 "microsoft yahei";}
+table { border-collapse:collapse; border-spacing:0; }
+fieldset, img { border:none; }
+input::-moz-focus-inner {border: none; padding: 0;}
+address, caption, cite, code, dfn, em, th, var { font-style:normal; font-weight:normal; }
+ol, ul { list-style:none; }
+caption, th { text-align:left; }
+blockquote, q { quotes: none; }
+blockquote:before, blockquote:after, q:before, q:after { content: ''; content: none; }
+abbr, acronym { border:0; font-variant: normal; }
+article, aside, details, figcaption, figure, footer, header, hgroup, nav, section { display: block; }
+audio, canvas, video { display: inline-block;  *display: inline; *zoom: 1;}
+audio:not([controls]) { display: none;}
+html { font-size: 100%; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+:link, :visited { text-decoration: none; }
+a:focus { outline: thin dotted #333; outline: 5px auto -webkit-focus-ring-color; outline-offset: -2px; }
+a:hover, a:active { outline: 0; }
+sup, sub { font-size: 100%; vertical-align: baseline; }
+img { height: auto; border: 0; -ms-interpolation-mode: bicubic; vertical-align: middle; max-width:100%; width:auto\9; /* ie8 */ }
+button, input, select, textarea { margin: 0; font-size: 100%; vertical-align: middle; }
+button, input {
+*overflow: visible; line-height: normal; }
+input, textarea, button, a { -webkit-tap-highlight-color:rgba(0, 0, 0, 0); -moz-tap-highlight-color:rgba(0, 0, 0, 0); tap-highlight-color:rgba(0, 0, 0, 0); }
+button::-moz-focus-inner, input::-moz-focus-inner {padding: 0; border: 0;}
+button, input[type="button"], input[type="reset"], input[type="submit"] { cursor: pointer; -webkit-appearance: button; }
+input[type="search"] { -webkit-appearance: textfield; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; }
+input[type="search"]::-webkit-search-decoration, input[type="search"]::-webkit-search-cancel-button {-webkit-appearance: none;}
+textarea { overflow: auto; vertical-align: top; }
+h1, h2, h3, h4, h5, h6 { font-size: 100%; font-weight: normal; }
+h1 small, h2 small, h3 small, h4 small, h5 small, h6 small { font-weight: normal; }
+.clearfix, .container {*zoom: 1;}
+.clearfix:before, .clearfix:after, .container:before, .container:after { display: table; content: ""; }
+.clearb, .clearfix:after, .container:after { clear: both; }
+.cGray { color:#999; }
+.lineh24{line-height:24px;}
+.lineh26{line-height:26px;}
+.lineh28{line-height:28px;}
+.lineh30{line-height:30px;}
+.f12 { font-size:12px; }
+.f14 { font-size:14px; }
+.f16 { font-size:16px; }
+.f20 { font-size:20px; }
+.f22 { font-size:22px; }
+.f32 { font-size:32px; }
+.fb { font-weight:bold; }
+.fl { float:left; }
+.fr { float:right; }
+.hidden { visibility:hidden; }
+.none { display:none; }
+.tc { text-align:center; }
+.tl { text-align:left; }
+.tr { text-align:right; }
+.mv { vertical-align:middle; }
+.unl { text-decoration:underline; }
+
+.mt5 { margin-top:5px; }.mr5 { margin-right:5px; }.mb5 { margin-bottom:5px; }.ml5 { margin-left:5px; }
+.mt10 { margin-top:10px; }.mr10 { margin-right:10px; }.mb10 { margin-bottom:10px; }.ml10 { margin-left:10px; }
+.mt15 { margin-top:15px; }.mr15 { margin-right:15px; }.mb15 { margin-bottom:15px; }.ml15 { margin-left:15px; }
+.mt20 { margin-top:20px; }.mr20 { margin-right:20px; }.mb20 { margin-bottom:20px; }.ml20 { margin-left:20px; }
+.mt25 { margin-top:25px; }.mr25 { margin-right:25px; }.mb25 { margin-bottom:25px; }.ml25 { margin-left:25px; }
+.mt30 { margin-top:30px; }.mr30 { margin-right:30px; }.mb30 { margin-bottom:30px; }.ml30 { margin-left:30px; }
+
+.pt5 { padding-top:5px; }.pr5 { padding-right:5px; }.pb5 { padding-bottom:5px; }.pl5 { padding-left:5px; }
+.pt10 { padding-top:10px; }.pr10 { padding-right:10px; }.pb10 { padding-bottom:10px; }.pl10 { padding-left:10px; }
+.pt15 { padding-top:15px; }.pr15 { padding-right:15px; }.pb15 { padding-bottom:15px; }.pl15 { padding-left:15px; }
+.pt20 { padding-top:20px; }.pr20 { padding-right:20px; }.pb20 { padding-bottom:20px; }.pl20 { padding-left:20px; }
+.pt30 { padding-top:30px; }.pr30 { padding-right:30px; }.pb30 { padding-bottom:30px; }.pl30 { padding-left:30px; }
+

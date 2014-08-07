@@ -1,0 +1,15 @@
+target
+*.pyc
+build
+.svn
+.settings
+.classpath
+.project
+.pydevproject
+*.properties
+.metadata/*
+Servers
+RemoteSystemsTempFiles
+.metadata
+test
+*.cache

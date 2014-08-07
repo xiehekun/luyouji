@@ -1,0 +1,21 @@
+<?py if _context['source'] == '1': ?>
+    <?py qqAppId = '101143265' ?>
+    <script type="text/javascript" src="http://qzonestyle.gtimg.cn/qzone/openapi/qc_loader.js" data-appid="${qqAppId}" data-redirecturi="http://luyouji.sonovel.com/auth/login" data-callback="true" charset="utf-8"></script>
+    <script type="text/javascript">
+        QC.Login.signOut();
+        window.location.href = '/auth/login';
+    </script>
+<?py #endif ?>
+<?py if _context['source'] == '2': ?>
+<html xmlns:wb="http://open.weibo.com/wb">
+<head>
+<?py weiboAppKey = '3330961291' ?>
+<script src="http://tjs.sjs.sinajs.cn/open/api/js/wb.js?appkey=${weiboAppKey}&debug=true" type="text/javascript" charset="utf-8"></script>
+<script type="text/javascript">
+    WB2.logout(function() {
+        window.location.href='/auth/login';
+    });
+</script>
+</head>
+</html>
+<?py #endif ?>

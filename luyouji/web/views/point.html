@@ -1,0 +1,125 @@
+<style type="text/css" media="screen">
+    #bigmap_black {
+        position: fixed;
+        left: 0;
+        top: 0;
+        display: none;
+        width: 100%;
+        height: 100%;
+        background-color: #333;
+        filter: Alpha(opacity=50);
+        -moz-opacity: .5;
+        opacity: 0.5;
+        z-index: 1;
+    }
+    #bigmap_info {
+        position: fixed;
+        left: 18%;
+        top: 10%;
+        display: none;
+        width: 800px;
+        padding-bottom: 15px;
+        background-color: #fff;
+        overflow: hidden;
+        zoom: 1;
+        z-index: 2;
+    }
+    #bigmap_info .title {
+        padding: 10px 20px;
+        font-size: 26px;
+        background-color: #66bcff;
+        color: #fff;
+    }
+    #bigmap_info .title em {
+        position: absolute;
+        right: 12px;
+        top: 6px;
+        cursor: pointer;
+    }
+</style>
+<div class="detailHead">
+    <div class="dHeadCons">
+        <p class="dHeadTitleEn">
+            <a href="javascript:void(0);">#{_context['point']['en_name']}</a>
+        </p>
+        <p class="dHeadTitleCn">
+            <a href="javascript:void(0);">#{_context['point']['zh_name']}</a>
+        </p>
+    </div>
+</div>
+<div class="wraper">
+    <!--left Side s-->
+    <div class="leftSide">
+        <div class="leftSideTitle">
+            <?py show_name = _context['point']['zh_name'] if _context['point']['zh_name'] else _context['point']['en_name'] ?>
+            <h2>#{show_name}</h2>
+        </div>
+        <?py if 'imgs' in _context and _context['imgs']: ?>
+        <div class="leftSideImg">
+            <div class="lsImage">
+                <?py for img in _context['imgs']: ?>
+                <img src="${_context['img_prefix']}${img}" />
+                <?py #endfor ?>
+            </div>
+        </div>
+        <?py #endif ?>
+        <?py if 'desc' in _context['point'] and _context['point']['desc']: ?>
+        <div class="leftSideTitle mt20">
+            <h2>概述</h2>
+        </div>
+        <p class="f14 lineh24">
+            #{''.join(_context['point']['desc'])}
+        </p>
+        <?py #endif ?>
+
+        <?py if 'details' in _context['point'] and _context['point']['details']: ?>
+        <div class="leftSideTitle mt20">
+            <h2>详情</h2>
+        </div>
+        <div class="lsDetailInfo">
+            <ul>
+                <?py for k in _context['point']['details']: ?>
+                <li>
+                    <span>#{k}:&nbsp;</span>
+                    <p>
+                        #{'&nbsp;&nbsp;|&nbsp;&nbsp;'.join(_context['point']['details'][k])}
+                    </p>
+                </li>
+                <?py #endfor ?>
+            </ul>
+        </div>
+        <?py #endif ?>
+    </div>
+    <!--left Side e-->
+
+    <!--right Side s-->
+    <div class="rightSide">
+        <?py if 'coordinate' in _context['point'] and _context['point']['coordinate']: ?>
+        <div class="mapTitle">
+            <h2>地图</h2>
+        </div>
+        <div>
+            <a href="javascript:void(0)" onClick="lookmap();" data-bn-ipg="place-poidetail-map"><img src="http://maps.google.cn/maps/api/staticmap?zoom=12&size=270x180&markers=icon:http://static.qyer.com/images/place5/icon_mapno_big.png|${_context['point']['coordinate']}&sensor=false" width="270" height="180" alt="" /></a>
+        </div>
+        <?py #endif ?>
+    </div>
+    <!--right Side e-->
+</div>
+
+<?py if 'coordinate' in _context['point'] and _context['point']['coordinate']: ?>
+<!--弹窗 start-->
+<div id="bigmap_black"></div>
+<div id="bigmap_info">
+    <!--弹窗 end-->
+    <script>
+        function lookmap() {
+            $('#bigmap_black').show();
+            $('#bigmap_info').show();
+        }
+    </script>
+    <p class="title">
+        #{show_name}地图<em onclick="$('#bigmap_black').hide();$('#bigmap_info').hide();"><img src="/static/css/img/ico_del2.png"></em>
+    </p>
+    <iframe frameborder="0" height="600px" width="800px" scrolling="no" name="upload" src="/common/map/${_context['point']['coordinate']}"></iframe>
+</div>
+<?py #endif ?>

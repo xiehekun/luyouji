@@ -1,0 +1,9 @@
+{
+    "_id" : "d8n5l2jnmn5k7n16jk",
+    "user_name" : "zhiying8710@hotmail.com",
+    "pass_word" : "j6jl2j4lkj1l5vb1m6",
+    "regist_time" : 142558933.639,
+    "source" : 0, // 0, 本站, 1, qq, 2,weibo
+    "source_key" : "0",
+    "source_token" : "1"
+}

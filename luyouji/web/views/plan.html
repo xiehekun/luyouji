@@ -1,0 +1,1378 @@
+﻿<!DOCTYPE HTML>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+        <meta name="description" content="路游计"/>
+        <meta name="keywords" content="路游计"/>
+        <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+        <title>路游计</title>
+        <link rel="stylesheet" type="text/css" href="/static/css/base.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/common.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/jquery.autocomplete.css" />
+        <style type="text/css" media="screen">
+            .newInfo input {
+                width: 483px;
+            }
+            div.colType ul li {
+                cursor: pointer;
+            }
+            #addNewColInfo {
+                height: 50%;
+            }
+            textarea.ta_edit {
+                width: 100%;
+                resize: none;
+                height: 100px;
+            }
+            div.txts, div.points{
+                overflow-wrap: break-word;
+            }
+            div.desct_name, div.txts, div.imgs, div.points {
+                clear: both;
+            }
+            .points_context,.imgs_context {
+                white-space:nowrap;
+                overflow:hidden;
+                margin-left: 66px;
+            }
+            .points_context li a {
+                color: red;
+            }
+            .points_title,.txts_title,.imgs_title,.dest_title,.point_context {
+                width: 66px;
+                float:left;
+            }
+            #addNewColBlack_sight,#addNewColBlack_food,#addNewColBlack_shopping,#addNewColBlack_upload {
+                position: fixed;
+                left: 0;
+                top: 0;
+                display: none;
+                width: 100%;
+                height: 100%;
+                background-color: #333;
+                filter: Alpha(opacity=50);
+                -moz-opacity: .5;
+                opacity: 0.5;
+                z-index: 1;
+            }
+
+            #addNewColInfo_sight,#addNewColInfo_food,#addNewColInfo_shopping,#addNewColInfo_upload {
+                position: fixed;
+                left: 25%;
+                top: 20%;
+                display: none;
+                width: 532px;
+                padding-bottom: 15px;
+                background-color: #fff;
+                overflow: hidden;
+                zoom: 1;
+                z-index: 2;
+            }
+
+            #addNewColInfo_upload {
+                height:75%;
+            }
+            #addNewColInfo_upload .title {
+                padding: 10px 20px;
+                font-size: 26px;
+                background-color: #66bcff;
+                color: #fff;
+            }
+            #addNewColInfo_upload .title em {
+                position:absolute;
+                right:12px;
+                top:6px;
+                cursor:pointer;
+            }
+
+            .rPoint {
+                padding: 0 0 0 25px;
+                background: url(/static/css/img/ico_img.png) no-repeat left center;
+            }
+
+            .img_li {
+                width: 105px;
+                float:left;
+                height: 120px;
+            }
+            .img_li p {
+                text-align : center;
+                font-size : 14px;
+                cursor: pointer;
+                line-height:14px;
+            }
+
+            .dest_info, .points_context {
+                font-size: 14px;
+                line-height:14px;
+                padding-top: 6px;
+            }
+
+            .dest_info {
+                float: left;
+                color: red;
+                width: 80%;
+            }
+            .points_context li {
+                font-size: 14px;
+                line-height:14px;
+                height : 14px;
+            }
+
+            .ops_span {
+                height: 14px;
+                margin-left: 30px;
+            }
+
+            .routeMainCons {
+                position: relative;
+            }
+        </style>
+        <?py img_thumb_w = '100' ?>
+        <script type="text/javascript" src="/static/js/jquery.min.js"></script>
+        <script type="text/javascript" src="/static/js/jquery.autocomplete.min.js"></script>
+        <script type="text/javascript" src="/static/js/main.js"></script>
+        <script type="text/javascript">
+            var p_id = "${_context['plan']['_id']}";
+            var days = 0;
+            var start_date = "${_context['plan']['start_date']}";
+            var last_dest_region_id = null;
+            var last_dest_region_name = null;
+            function get_zh_day_index(input) {
+                var danwei = Array("", "十", "百", "千", "万", "十", "百", "千", "亿");
+                var inputvalue = parseInt(input);
+                var l = input.length;
+                var a = new Array(l);
+                var b = new Array(l);
+                var result = "";
+                for (var i = 0; i < l; i++) {
+                    a[i] = input.substr(i, 1);
+                    b[i] = getchinese(a[i]);
+                    result += b[i] + danwei[l - i - 1];
+                }
+                if (inputvalue < 20 && inputvalue > 9) {
+                    return result.substr(1);
+                }
+                return result;
+            }
+
+            function getchinese(p) {
+                var input = p;
+                if (input == "0")
+                    return "";
+                else if (input == "1")
+                    return "一";
+                else if (input == "2")
+                    return "二";
+                else if (input == "3")
+                    return "三";
+                else if (input == "4")
+                    return "四";
+                else if (input == "5")
+                    return "五";
+                else if (input == "6")
+                    return "六";
+                else if (input == "7")
+                    return "七";
+                else if (input == "8")
+                    return "八";
+                else if (input == "9")
+                    return "九";
+            }
+
+            function get_day(i) {
+                var a = new Date(start_date);
+                a = a.valueOf();
+                a = a + (parseInt(i) - 1) * 24 * 60 * 60 * 1000;
+                a = new Date(a);
+                return a.Format('yyyy-MM-dd');
+            }
+
+            function gene_details() {
+                $(".routeDate").each(function(i) {
+                    $(this).find('span.dday').html(get_zh_day_index((i + 1) + ""));
+                });
+            }
+
+            function toggle_details(btn) {
+                $(btn).toggleClass(function(index, clz, sw) {
+                    $(this).removeClass(clz);
+                    var mainCons = $(this).parents('.rouTitle').next('div.routeMainCons').get(0);
+                    if (clz == "showBtn") {
+                        $(this).html('收起');
+                        $(mainCons).show();
+                        return "hideBtn";
+                    }
+                    if (clz == "hideBtn") {
+                        $(this).html('展开');
+                        $(mainCons).hide();
+                        return "showBtn";
+                    }
+                }, true);
+            }
+
+            var dests = {};
+            function gene_dest_info(_ids) {
+                if(!_ids) {
+                    return;
+                }
+                _ids = _ids.split(',');
+                for(var j in _ids) {
+                    if(dests[_ids[j]]) {
+                        _ids.splice(j, 1);
+                    }
+                }
+                if(!_ids) {
+                    $('.dest_info').each(function(){
+                        var _id = $(this).attr('data-dest-id');
+                        if(_id && dests[_id]) {
+                            $(this).find('span:first').html("&nbsp;&nbsp;&nbsp;" + dests[_id]['en_name'] + "&nbsp;&nbsp;&nbsp;");
+                            if($(this).find('span:first').next('span').length > 0) {
+                                $(this).find('span:first').next('span').remove();
+                            }
+                            $(this).find('span:first').after(countries[dests[_id]['country_id']]);
+                        }
+                    });
+                    return;
+                }
+                _ids = _ids.join(',');
+                $.get('/common/sea_regions?_ids=' + _ids, function(resp){
+                    var data = eval('(' + resp + ')');
+                    if(data) {
+                        for(var i in data) {
+                            dests[data[i]['_id']] = data[i];
+                        }
+                        $('.dest_info').each(function(){
+                            var _id = $(this).attr('data-dest-id');
+                            if(_id && dests[_id]) {
+                                // $(this).find('span:first').html("&nbsp;&nbsp;&nbsp;" + dests[_id]['en_name'] + "&nbsp;&nbsp;&nbsp;").after(countries[dests[_id]['country_id']]);;
+                                $(this).find('span:first').html("&nbsp;&nbsp;&nbsp;" + dests[_id]['en_name'] + "&nbsp;&nbsp;&nbsp;");
+                                if($(this).find('span:first').next('span').length > 0) {
+                                    $(this).find('span:first').next('span').remove();
+                                }
+                                $(this).find('span:first').after(countries[dests[_id]['country_id']]);
+                            }
+                        });
+                    }
+                });
+            }
+
+            var margin_points_li = function(obj){
+                if(!obj) {
+                    $('.points_context').each(function(){
+                        if(!$(this).find('li') || $(this).find('li').length == 0) {
+                            $(this).siblings('.points_title').hide();
+                        }
+                        $(this).find('li:gt(0)').each(function(){
+                            $(this).css({'margin-top' : '10px'});
+                        });
+                        $(this).find('li:last').css({'margin-bottom' : '5px'});
+                    });
+                } else {
+                    if(!obj.find('li') || obj.find('li').length == 0) {
+                        obj.siblings('.points_title').hide();
+                    }
+                    obj.find('li:gt(0)').each(function(){
+                        $(this).css({'margin-top' : '10px'});
+                    });
+                    obj.find('li:last').css({'margin-bottom' : '5px'});
+                }
+            };
+
+            var del_plan_day = function(o) {
+                pd_id = $(o).parents('.routeMainCons').attr('id').split('_')[1];
+                $.get('/plan/day/' + p_id + '_' + pd_id, function(resp){
+                    var data = eval('(' + resp + ')');
+                    if(data['succ']) {
+                        var rmcons = $(o).parents('.routeMainCons');
+                        rmcons.prev('.rouTitle').remove();
+                        rmcons.remove();
+                        last_day_del_ht();
+                        days = days - 1;
+                        $("#days").html(days);
+
+                        $('#p_end_day').text(get_day(days));
+                    } else {
+                        alert('删除失败');
+                    }
+                });
+            };
+
+            var add_plan_day = function(o) {
+                $.get('/plan/day_add/' + p_id, function(resp){
+                    var data = eval('(' + resp + ')');
+                    var ht = '<div class="rouTitle">' +
+                                  '<div class="routeDate">' +
+                                       '第<span class="dday">二</span>天(' + data['day'] + ')' +
+                                  '</div>' +
+                                  '<div class="routeAddCol">' +
+                                       '<div class="hideBtn" onclick="toggle_details(this);">收起</div>' +
+                                       '<div class="addColumn" data-pd_id="' + data['_id'] + '" data-pd_day="' + data['day'] + '">' +
+                                            '新增栏目' +
+                                       '</div>' +
+                                  '</div>' +
+                              '</div>';
+                    ht += '<div class="routeMainCons" style="display: block" id="rmCons_' + data['_id'] + '">' +
+                            '您还没有记下任何内容，点击右上角"新增栏目"按钮，马上编辑吧。' +
+                          '</div>';
+                    $('.routeMain').append(ht);
+                    days = days + 1;
+                    $("#days").html(days);
+                    $('#p_end_day').text(data['day']);
+                    gene_details();
+                    $(o).parents('.addDayDel').remove();
+                    last_day_del_ht();
+                    var c = window.document.body.scrollHeight;
+                    window.scroll(0,c);
+                });
+            };
+
+            var last_day_del_ht = function(){
+                if(!$('.routeMainCons:last').find('.addDayDel') || $('.routeMainCons:last').find('.addDayDel').length == 0) {
+                    $('.routeMainCons:last').append('<div class="addDayDel">' +
+                            '<div class="delDay" onclick="del_plan_day(this);">删除</div>' +
+                            '<div class="addDay" onclick="add_plan_day(this);">新增天数</div>' +
+                            '</div>');
+                }
+            };
+
+            var countries = {};
+            var curr_point_type = 'sight';
+            $(function() {
+                $(".addColumn").live('click', function(){
+                    $(this).siblings('div.showBtn').trigger('click');
+                    $('#pd_day').val($(this).attr('data-pd_day'));
+                    $('#pd_id').val($(this).attr('data-pd_id'));
+                    if (last_dest_region_id) {
+                        $('#dest_region_id').val(last_dest_region_id);
+                        $('#dest_region_name').val(last_dest_region_name);
+                    }
+                    $("#pd_type").val(0);
+                    $('div.colType ul li').each(function(i) {
+                        if (i == 0) {
+                            if (!$(this).hasClass('cur')) {
+                                $(this).addClass('cur');
+                            }
+                        } else {
+                            $(this).removeClass('cur');
+                        }
+                    });
+                    $("#addNewColBlack").show();
+                    $("#addNewColInfo").show();
+                    $("#dest_region_name").focus();
+                });
+                $(".columnCancel").live('click', function(){
+                    $("#addNewColBlack").hide();
+                    $("#addNewColInfo").hide();
+                    $("#addNewColBlack_sight").hide();
+                    $("#addNewColInfo_sight").hide();
+                    $("#addNewColBlack_food").hide();
+                    $("#addNewColInfo_food").hide();
+                    $("#addNewColBlack_shopping").hide();
+                    $("#addNewColInfo_shopping").hide();
+                });
+                $("#addNewColInfo_upload .title em").live('click', function(){
+                    var _id = $("#addNewColInfo_upload").find('#_id').val();
+                    var dd_id = $("#addNewColInfo_upload").find('#dd_id').val();
+                    $.get('/plan/day_imgs?_id=' + _id + "&dd_id=" + dd_id, function(resp){
+                        var data = eval('(' + resp + ')');
+                        var rmInfo = $('#rmInfo_' + dd_id);
+                        var imgs = rmInfo.find('.imgs');
+                        if(!imgs || imgs.length == 0) {
+                            imgs = '<div class="imgs"><span class="imgs_title">图　片:</span><ul class="imgs_context"></ul></div>';
+                            rmInfo.append(imgs);
+                        }
+                        imgs = rmInfo.find('.imgs');
+                        var imgs_context = imgs.find('.imgs_context');
+                        imgs_context.find('li').remove();
+                        for(var i in data) {
+                            imgs_context.append('<li class="img_li">' +
+                                        '<p style="text-align:center;"><a href="' + data[i] + '" target="_blank"><img src="' + data[i] + '?imageView2/1/w/${img_thumb_w}" /></a></p>' +
+                                        '<p style="text-align:center;display:none;" onclick="del_pd_img(this, \'' + _id + '\', \'' + dd_id + '\', \'' + data[i] + '\');"><img src="/static/images/del.png"/></p>' +
+                                        '</li>');
+                        }
+                        imgs.show();
+                        $("#addNewColBlack_upload").hide();
+                        $("#addNewColInfo_upload").hide();
+                    });
+                });
+
+                $(".sel_point").live('click', function(){
+                    var t = $(this).attr('data-p-type');
+                    $("#addNewColBlack_" + t).show();
+                    $("#addNewColInfo_" + t).show().find('#point_name').focus();
+                    var infoDiv = $("#addNewColInfo_" + t);
+                    if(!infoDiv || infoDiv.length == 0) {
+                        return;
+                    }
+
+                    infoDiv.find('#p_pd_id').val($(this).attr('data-pd-id'));
+                    infoDiv.find('#p_dd_id').val($(this).attr('data-dd-id'));
+                    infoDiv.find('#point_type').val($(this).attr('data-p-type'));
+                    if('sight' == t) {
+                        infoDiv.find('#point_title').text('景点');
+                        infoDiv.find('#point_name').attr('placeholder', "请输入一个景点名, 如:黄石国家公园");
+                    }
+                    if('food' == t) {
+                        infoDiv.find('#point_title').text('美食');
+                        infoDiv.find('#point_name').attr('placeholder', "请输入一种美食地点, 如:萨瓦金餐厅");
+                    }
+                    if('shopping' == t) {
+                        infoDiv.find('#point_title').text('购物');
+                        infoDiv.find('#point_name').attr('placeholder', "请输入一种购物地点, 如:顿涅茨克中心市场");
+                    }
+                    infoDiv.find('#point_name').val('');
+                    infoDiv.find('#point_id').val('');
+                    infoDiv.find('#point_name').setOptions({
+                        extraParams : {
+                            point_type : infoDiv.find('#point_type').val(),
+                            region_id : $(this).attr('data-region-id')
+                        },
+                        cacheLength : 1
+                    });
+                    curr_point_type = infoDiv.find('#point_type').val();
+                });
+
+                $('.rImg').live('click', function(){
+                    var i_url = '/common/upload/' + $(this).attr('data-pd-id') + '_' + $(this).attr('data-dd-id');
+                    $("#addNewColInfo_upload").find('#_id').val($(this).attr('data-pd-id'));
+                    $("#addNewColInfo_upload").find('#dd_id').val($(this).attr('data-dd-id'));
+                    $("#addNewColInfo_upload").find('iframe').remove();
+                    $("#addNewColInfo_upload").find('.newInfo').append('<iframe frameborder="0" height="100%" width="100%" scrolling="no" name="upload" src="' + i_url + '"></iframe>');
+                    $("#addNewColBlack_upload").show();
+                    $("#addNewColInfo_upload").show();
+                });
+
+                $.ajax($.ajax({
+                    url : "/common/countries",
+                    async : false,
+                    success : function(resp) {
+                        var data = eval("(" + resp + ")");
+                        for (var i in data) {
+                            var d = data[i];
+                            countries[d['_id']] = '<span style="color: gray">' + d['zh_name'] + "  " + d['continent_zh_name'] + "</span>";
+                        }
+                    }
+                }));
+
+                days = daysBetween("${_context['plan']['end_date']}", "${_context['plan']['start_date']}") + 1;
+                $("#days").html(days);
+                gene_details();
+
+                var show_result = false;
+                $('#dest_region_name').autocomplete("/common/sea_city", {
+                    max : 20, //列表里的条目数
+                    minChars : 1, //自动完成激活之前填入的最小字符
+                    width : 490, //提示的宽度，溢出隐藏
+                    scrollHeight : 500, //提示的高度，溢出显示滚动条
+                    matchContains : true, //包含匹配，就是data参数里的数据，是否只要包含文本框里的数据就显示
+                    autoFill : false, //自动填充
+                    highlight : function(value, term) {
+                        return value;
+                    },
+                    cacheLength : 1,
+                    formatItem : function(row, i, max) {
+                        if (!row || row == "None" || row == "No Records.") {
+                            return "无结果";
+                        }
+                        row = eval("(" + row + ")");
+                        return row.zh_name + "&nbsp;&nbsp;&nbsp;" + row.en_name +
+                               "&nbsp;&nbsp;&nbsp;" + countries[row.country_id];// +
+                               //"<a style='color: gray;float: right;' onclick=\"window.open(\'/common/region/" + row._id + "\');return false;\" href='javascript:void(0);'>点击查看</a>";
+                    }
+                }).result(function(event, row, formatted) {
+                    if (!row || row == "None" || row == "No Records.") {
+                        return;
+                    }
+                    row = eval("(" + row + ")");
+                    $(this).val(row.zh_name);
+                    show_result = false;
+                    last_dest_region_name = row.zh_name;
+                    last_dest_region_id = row._id;
+                    $('#dest_region_id').val(last_dest_region_id);
+                }).blur(function() {
+                    if ($(this).val() != last_dest_region_name) {
+                        $('#dest_region_id').val('');
+                        last_dest_region_id = null;
+                    }
+                });
+
+
+                $('#addNewColInfo_sight,#addNewColInfo_food,#addNewColInfo_shopping').find('#point_name').each(function(){
+                    $(this).autocomplete("/common/sea_points", {
+                        max : 20, //列表里的条目数
+                        minChars : 1, //自动完成激活之前填入的最小字符
+                        width : 490, //提示的宽度，溢出隐藏
+                        scrollHeight : 500, //提示的高度，溢出显示滚动条
+                        matchContains : true, //包含匹配，就是data参数里的数据，是否只要包含文本框里的数据就显示
+                        autoFill : false, //自动填充
+                        highlight : function(value, term) {
+                            return value;
+                        },
+                        cacheLength : 1,
+                        matchSubset : false,
+                        formatItem : function(row, i, max) {
+                            if (!row || row == "None" || row == "No Records.") {
+                                return "无结果";
+                            }
+                            row = eval("(" + row + ")");
+                            return row.zh_name + "&nbsp;&nbsp;&nbsp;" + row.en_name +
+                                   "<a style='color: gray;float: right;' onclick=\"window.open(\'/common/point/" + curr_point_type + '_' + row._id + "\');return false;\" href='javascript:void(0);'>点击查看</a>";
+                        }
+                    }).result(function(event, row, formatted) {
+                        if (!row || row == "None" || row == "No Records.") {
+                            return;
+                        }
+                        row = eval("(" + row + ")");
+                        $(this).val(row.zh_name ? row.zh_name : row.en_name);
+                        $(this).parents('.newInfo').siblings('#point_id').val(row._id);
+                    });
+                });
+
+                $('div.colType ul li').live('click', function(){
+                    if (!$(this).hasClass('cur')) {
+                        $(this).siblings().removeClass('cur').end().addClass('cur');
+                        $("#pd_type").val($(this).index('div.colType ul li'));
+                    }
+                });
+
+                $('.routeMainCons').each(function(){
+                    if($(this).find('.rmInfo').length > 0) {
+                        $(this).addClass('routeMainInfo');
+                    } else {
+                        $(this).html('您还没有记下任何内容，点击右上角"新增栏目"按钮，马上编辑吧。');
+                    }
+                });
+
+                var _ids = [];
+                $('.dest_info').each(function(){
+                    var _id = $(this).attr('data-dest-id');
+                    if(_id) {
+                        _ids.push($(this).attr('data-dest-id'));
+                    }
+                });
+                if(_ids) {
+                    gene_dest_info(_ids.join(','));
+                }
+
+                var point_ids = {};
+                $('.points_title').each(function(){
+                    var curr_type = $(this).attr('data-point-type');
+                    var e_pids = point_ids[curr_type];
+                    if(!e_pids) {
+                        e_pids = [];
+                    }
+                    var curr_pids = $(this).attr('data-points');
+                    if(curr_pids) {
+                        e_pids = e_pids.concat(curr_pids.split(','));
+                        point_ids[curr_type] = e_pids;
+                    }
+                });
+                if (point_ids) {
+                    var params = [];
+                    for(var k in point_ids) {
+                        params.push(k + "=" + point_ids[k]);
+                    }
+                    $.get('/common/points?' + params.join('&'), function(resp){
+                        var data = eval('(' + resp + ')');
+                        var all_points = {};
+                        for(var k in data) {
+                            var ps = data[k];
+                            for(var i in ps) {
+                                p = ps[i];
+                                all_points[p['_id']] = p;
+                            }
+                        }
+                        $('.points_title').each(function(){
+                            var curr_type = $(this).attr('data-point-type');
+                            var curr_pids = $(this).attr('data-points');
+                            if (curr_pids) {
+                                var points = data[curr_type];
+                                curr_pids = curr_pids.split(',');
+                                for(var j in curr_pids) {
+                                    var curr_pid = curr_pids[j];
+                                    var point = all_points[curr_pid];
+                                    var show_zh_name = point['zh_name'] ? point['zh_name'] : point['en_name'];
+                                    var show_en_name = point['en_name'] ? ('(' + point['en_name'] + ')') : '';
+                                    $(this).parent('.points').find('.points_context').append('<li><a target="_blank" title="' + show_zh_name + show_en_name + '" href="/common/point/' + curr_type + '_' + point['_id'] + '">' + show_zh_name + '' + '</a></li>');
+                                }
+                            }
+
+                        });
+                        margin_points_li();
+                    });
+                }
+
+
+                //$('.dest_info').live('mouseover', function(){
+                //    if(!$(this).find('.ops_span') || $(this).find('.ops_span').length == 0) {
+                //        $(this).append('<span class="ops_span"><a title="查看" href="/common/region/' + $(this).attr('data-dest-id') + '" target="_blank"><img src="/static/images/look.png" /></a></span>');
+                //    }
+                //    //$(this).find('.ops_span').show();
+                //}).live('mouseout', function(){
+                //    $(this).find('.ops_span').hide();
+                //});
+
+                $('.points_context li').live('mouseover', function(){
+                    if(!$(this).find('.ops_span') || $(this).find('.ops_span').length == 0) {
+                        var point_id = $(this).children('a').attr('href').split('_')[1];
+                        $(this).append('<span class="ops_span"><a title="查看" href="' + $(this).children('a').attr('href') + '" target="_blank"><img src="/static/images/look.png" /></a>&nbsp;&nbsp;&nbsp;' +
+                                       '<a title="删除" href="javascript:void(0);" onclick="del_dd_point(this, \'' + point_id + '\')" target="_blank"><img src="/static/images/del.png" /></a></span>');
+                    }
+                    $(this).find('.ops_span').show();
+                }).live('mouseout', function(){
+                    $(this).find('.ops_span').hide();
+                });
+
+                $('.img_li').live('mouseover', function(){
+                    $(this).find('p:eq(1)').show();
+                }).live('mouseout', function(){
+                    $(this).find('p:eq(1)').hide();
+                });
+
+                last_day_del_ht();
+            });
+
+            var del_dd_point = function(obj, point_id){
+                var dd_id = $(obj).parents('.rmInfo').attr('id').split('_')[1];
+                var _id = $(obj).parents('.routeMainCons').attr('id').split('_')[1];
+                $.get('/plan/day_point?_id=' + _id + '&dd_id=' + dd_id + '&point_id=' + point_id, function(resp){
+                    var data = eval("(" + resp + ")");
+                    if(data['succ']) {
+                        $(obj).parents('li').remove();
+                        margin_points_li($('#rmInfo_' + dd_id).find('.point_context'));
+                    } else {
+                        var code = data['code'];
+                        switch(code) {
+                            case 7:
+                            alert('删除失败');
+                            break;
+                        }
+                    }
+                });
+            };
+
+            function del_pd_detail(pd_id, dd_id) {
+                if(!confirm('确定要删除这项行程吗?')) {
+                    return;
+                }
+                $.get('/plan/day_detail/' + pd_id + '?dd_id=' + dd_id, function(resp){
+                    var data = eval("(" + resp + ")");
+                    var succ = data['succ'];
+                    if(!succ) {
+                        alert('删除失败');
+                        return;
+                    }
+                    var default_txt = '';
+                    var rmInfo_p =  null;
+                    if ($("#rmInfo_" + dd_id).siblings('.rmInfo').length == 0) {
+                        default_txt = '您还没有记下任何内容，点击右上角"新增栏目"按钮，马上编辑吧。';
+                        rmInfo_p = $("#rmInfo_" + dd_id).parent('.routeMainCons');
+                    }
+                    $("#rmInfo_" + dd_id).remove();
+                    if(default_txt) {
+                        rmInfo_p.removeClass('routeMainInfo').text(default_txt);
+                    }
+                    alert('删除成功');
+                });
+            }
+
+            function edit_pd_detail(obj, pd_id, dd_id, type) {
+                $(obj).hide().siblings('a.rSave').show();
+                var s = $('#rmInfo_' + dd_id).find('.txts span:first');
+                s.remove();
+                if(!s || s.length == 0) {
+                    s = "<span class='txts_title'>笔　记:&nbsp;</span>";
+                }
+                var txt = $.trim($('#rmInfo_' + dd_id).find('.txts span').text());
+                $('#rmInfo_' + dd_id).find('.txts').html('').append(s).append('<textarea class="ta_edit">' + txt + '</textarea>');
+                $('#rmInfo_' + dd_id).find('.txts').find('.ta_edit').focus().autoTextarea({maxHeight : 500});
+                // type = parseInt(type);
+                // switch(type) {
+                    // case 0:
+                        // var s = $('#rmInfo_' + dd_id).find('.txts span');
+                        // s.remove();
+                        // if(!s || s.length == 0) {
+                            // s = "<span>笔　记:&nbsp;</span>";
+                        // }
+                        // var txt = $.trim($('#rmInfo_' + dd_id).find('.txts').text());
+                        // $('#rmInfo_' + dd_id).find('.txts').text('').append(s).append('<textarea class="ta_edit">' + txt + '</textarea>');
+                        // $('#rmInfo_' + dd_id).find('.txts').find('.ta_edit').focus().autoTextarea({maxHeight : 500});
+                    // break;
+                    // default:
+                    // break;
+                // }
+
+            }
+
+            function __save_pd_details(d, cb) {
+                $.post('/plan/day_details', d, function(resp){
+                    var data = eval("(" + resp + ")");
+                    var succ = data['succ'];
+                    if(succ) {
+                        alert('保存笔记成功');
+                        if(cb && typeof cb == 'function') {
+                            cb();
+                        }
+                    } else {
+                        var code = data['code'];
+                        switch(code) {
+                            case 4:
+                            alert("保存笔记失败, 系统错误");
+                            break;
+                            default:
+                            alert("保存笔记失败, 未知错误");
+                            break;
+                        }
+                    }
+                });
+            }
+
+            function save_pd_detail(pd_id, dd_id, type) {
+                var txt = $('#rmInfo_' + dd_id).find('.txts textarea').val();
+                // var imgs = "";
+                // var imgs_ns = $('#rmInfo_' + dd_id).find('.txts img').attr('src');
+                // if(imgs_ns && imgs_ns.length > 0) {
+                    // imgs = imgs_ns.join(',');
+                // }
+                var cb = function(){
+                    $('#rmInfo_' + dd_id).find('.txts textarea').remove();
+                    $('#rmInfo_' + dd_id).find('.txts').append('<span style="color:red;font-size:14px;">' + txt + '</span>');
+                    // $('#rmInfo_' + dd_id).find('.rSave').after('<a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, \'' + pd_id + '\', \'' + dd_id + '\', \'' + type + '\');">编辑笔记</a>');
+                    $('#rmInfo_' + dd_id).find('.rSave').hide().siblings('a.rEdit').show();
+                };
+                if(!txt || !$.trim(txt)) {
+                    cb();
+                     $('#rmInfo_' + dd_id).find('.txts span').remove();
+                    return;
+                }
+                __save_pd_details({'_id' : pd_id, 'dd_id' : dd_id, 'txt' : txt}, cb);
+            }
+
+            function plan_day() {
+                var dest_region_id = $('#dest_region_id').val();
+                var dest_region_name = $('#dest_region_name').val();
+                if ((!dest_region_id || !$.trim(dest_region_id))) {
+                    if (!dest_region_name && !$.trim(dest_region_name)) {
+                        alert('请挑选或填入一个目的地');
+                        return;
+                    }
+                }
+                var day = $("#pd_day").val();
+                if (!day || !$.trim(day)) {
+                    alert('服务器错误');
+                    return;
+                }
+                var _id = $("#pd_id").val();
+                if (!_id || !$.trim(_id)) {
+                    alert('服务器错误');
+                    return;
+                }
+                var _type = $("#pd_type").val();
+                var frm_data = {
+                    'p_id' : p_id,
+                    'dest_region_id' : dest_region_id,
+                    'dest_region_name' : dest_region_name,
+                    'day' : day,
+                    '_id' : _id,
+                    'type' : _type
+                };
+                $.post('/plan/day', frm_data, function(resp) {
+                    var data = eval("(" + resp + ")");
+                    var succ = data['succ'];
+                    if (succ) {
+                        alert('添加成功');
+                        $(".columnCancel").trigger('click');
+                        var plan_detail = data['data']['plan_detail'];
+                        var ht = "";
+                        var type = parseInt(plan_detail['_type']);
+                        var dd_id = plan_detail['dd_id'];
+                        var dest_id = plan_detail['dest_region_id'];
+                        switch(type) {
+                            case 0:
+                                ht = '<div class="rmInfo" id="rmInfo_' + dd_id + '">' +
+                                        '<span class="title">交通</span>' +
+                                        '<p><div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="' + dest_id + '">' + dest_region_name + '<span></span><span style="color: gray;"></span></div></div>' +
+                                        '<div class="txts"><span class="txts_title">笔　记:&nbsp;</span><textarea class="ta_edit"></textarea></div>' +
+                                        '<div class="imgs"></div></p>' +
+                                        '<div class="ised">' +
+                                        '    <a class="rImg" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" href="javascript:void(0);">图片</a>' +
+                                        '    <a class="rSave" href="javascript:void(0);"  onclick="save_pd_detail(\'' + _id + '\', \'' + dd_id + '\', \'0\');">保存笔记</a>' +
+                                        '    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail(\'' + _id + '\', \'' + dd_id + '\');">删除</a>' +
+                                        '</div>' +
+                                     '</div>';
+                                break;
+                            case 1:
+                                ht = '<div class="rmInfo" id="rmInfo_' + dd_id + '">' +
+                                        '<span class="title">住宿</span>' +
+                                        '<p><div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="' + dest_id + '">' + dest_region_name + '<span></span><span style="color: gray;"></span></div></div>' +
+                                        '<div class="txts"><span class="txts_title">笔　记:&nbsp;</span><textarea class="ta_edit"></textarea></div><div class="imgs"></div></p>' +
+                                        '<div class="ised">' +
+                                        '    <a class="rImg" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" href="javascript:void(0);">图片</a>' +
+                                        '    <a class="rSave" href="javascript:void(0);"  onclick="save_pd_detail(\'' + _id + '\', \'' + dd_id + '\', \'0\');">保存笔记</a>' +
+                                        '    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail(\'' + _id + '\', \'' + dd_id + '\');">删除</a>' +
+                                        '</div>' +
+                                     '</div>';
+                                break;
+                            case 5:
+                                ht = '<div class="rmInfo" id="rmInfo_' + dd_id + '">' +
+                                        '<span class="title">其他</span>' +
+                                        '<p><div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="' + dest_id + '">' + dest_region_name + '<span></span><span style="color: gray"></span></div></div>' +
+                                        '<div class="txts"><span class="txts_title">笔　记:&nbsp;</span><textarea class="ta_edit"></textarea></div><div class="imgs"></div></p>' +
+                                        '<div class="ised">' +
+                                        '    <a class="rImg" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" href="javascript:void(0);">图片</a>' +
+                                        '    <a class="rSave" href="javascript:void(0);"  onclick="save_pd_detail(\'' + _id + '\', \'' + dd_id + '\', \'0\');">保存笔记</a>' +
+                                        '    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail(\'' + _id + '\', \'' + dd_id + '\');">删除</a>' +
+                                        '</div>' +
+                                     '</div>';
+                                break;
+                            case 2:
+                                ht = '<div class="rmInfo" id="rmInfo_' + dd_id + '">' +
+                                        '<span class="title">景点</span>' +
+                                        '<p><div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="' + dest_id + '">' + dest_region_name + '<span></span><span style="color: gray"></span></div></div>' +
+                                        '<div class="points"><span data-points="" data-point-type="sight"  class="points_title" style="display:none;">景　点:&nbsp;</span><ul class="points_context"></ul></div>' +
+                                        '<div class="txts"><span class="txts_title">笔　记:&nbsp;</span><textarea class="ta_edit"></textarea></div><div class="imgs"></div></p>' +
+                                        '<div class="ised">' +
+                                        '    <a class="rPoint sel_point" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" data-p-type="sight" data-region-id="' + dest_id + '" href="javascript:void(0);">挑选景点</a>' +
+                                        '    <a class="rImg" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" href="javascript:void(0);">图片</a>' +
+                                        '    <a class="rSave" href="javascript:void(0);"  onclick="save_pd_detail(\'' + _id + '\', \'' + dd_id + '\', \'0\');">保存笔记</a>' +
+                                        '    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail(\'' + _id + '\', \'' + dd_id + '\');">删除</a>' +
+                                        '</div>' +
+                                     '</div>';
+                                break;
+                            case 3:
+                                ht = '<div class="rmInfo" id="rmInfo_' + dd_id + '">' +
+                                        '<span class="title">美食</span>' +
+                                        '<p><div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="' + dest_id + '">' + dest_region_name + '<span></span><span style="color: gray"></span></div></div>' +
+                                        '<div class="points"><span data-points="" data-point-type="food" class="points_title" style="display:none;">美　食:&nbsp;</span><ul class="points_context"></ul></div>' +
+                                        '<div class="txts"><span class="txts_title">笔　记:&nbsp;</span><textarea class="ta_edit"></textarea></div>' +
+                                        '<div class="imgs"></div></p>' +
+                                        '<div class="ised">' +
+                                        '    <a class="rPoint sel_point" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" data-p-type="food" data-region-id="' + dest_id + '" href="javascript:void(0);">挑选美食</a>' +
+                                        '    <a class="rImg" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" href="javascript:void(0);">图片</a>' +
+                                        '    <a class="rSave" href="javascript:void(0);"  onclick="save_pd_detail(\'' + _id + '\', \'' + dd_id + '\', \'0\');">保存笔记</a>' +
+                                        '    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail(\'' + _id + '\', \'' + dd_id + '\');">删除</a>' +
+                                        '</div>' +
+                                     '</div>';
+                                break;
+                            case 4:
+                                ht = '<div class="rmInfo" id="rmInfo_' + dd_id + '">' +
+                                        '<span class="title">购物</span>' +
+                                        '<p><div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="' + dest_id + '">' + dest_region_name + '<span></span><span style="color: gray"></span></div></div>' +
+                                        '<div class="points"><span data-points="" data-point-type="shopping" class="points_title" style="display:none;">购　物:&nbsp;</span><ul class="points_context"></ul></div>' +
+                                        '<div class="txts"><span class="txts_title">笔　记:&nbsp;</span><textarea class="ta_edit"></textarea></div><div class="imgs"></div></p>' +
+                                        '<div class="ised">' +
+                                        '    <a class="rPoint sel_point" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" data-p-type="shopping" data-region-id="' + dest_id + '" href="javascript:void(0);">选择购物点</a>' +
+                                        '    <a class="rImg" data-pd-id="' + _id + '" data-dd-id="' + dd_id + '" href="javascript:void(0);">图片</a>' +
+                                        '    <a class="rSave" href="javascript:void(0);"  onclick="save_pd_detail(\'' + _id + '\', \'' + dd_id + '\', \'0\');">保存笔记</a>' +
+                                        '    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail(\'' + _id + '\', \'' + dd_id + '\');">删除</a>' +
+                                        '</div>' +
+                                     '</div>';
+                                break;
+                            default:
+                                break;
+                        }
+                        if(ht) {
+                            if ($('#rmCons_' + _id + ' .rmInfo').length == 0) {
+                                $('#rmCons_' + _id).html("");
+                            }
+                            $('#rmCons_' + _id).append(ht).addClass('routeMainInfo');
+                            $('#rmInfo_' + dd_id).find('.txts textarea').focus().autoTextarea({maxHeight : 500});
+                            gene_dest_info(dest_id);
+                            last_day_del_ht();
+                            switch(type) {
+                                case 2:
+                                case 3:
+                                case 4:
+                                $('#rmInfo_' + dd_id).find('.sel_point').trigger('click');
+                                break;
+                                default:
+                                break;
+                            }
+                        }
+                    } else {
+                        var code = data['code'];
+                        switch (code) {
+                            case 4:
+                                alert('服务器错误');
+                                break;
+                            case 3:
+                                alert('请挑选或填入一个目的地');
+                                break;
+                            case 5:
+                                alert('服务器错误');
+                                break;
+                            case 6:
+                                alert('服务器错误');
+                                break;
+                            default:
+                                alert('添加失败, 未知错误');
+                                break;
+                        }
+                    }
+                });
+            }
+
+            var add_point = function(t){
+                var t_zh = '';
+                if(t == 'sight') {
+                    t_zh = '景点';
+                } else if(t == 'food') {
+                    t_zh = '美食地点';
+                } else if(t == 'shopping') {
+                    t_zh = '购物地点';
+                } else {
+                    $(".columnCancel").trigger('click');
+                    return;
+                }
+                var infoDiv = $('#addNewColInfo_' + t);
+                var point_id = infoDiv.find('#point_id').val();
+                if(!point_id || !$.trim(point_id)) {
+                    alert('请选择一个有效的' + t_zh);
+                    return;
+                }
+                var _id = infoDiv.find('#p_pd_id').val();
+                var dd_id = infoDiv.find('#p_dd_id').val();
+                var _type = infoDiv.find('#point_type').val();
+                $.post('/plan/day_point', {'_id' : _id, 'dd_id' : dd_id, 'point_id' : point_id, 'point_type' : _type}, function(resp){
+                    var data = eval("(" + resp + ")");
+                    var succ = data['succ'];
+                    if(!succ) {
+                        var code = data['code'];
+                        switch(code) {
+                            case 7:
+                                alert('请选择一个有效的' + t_zh);
+                            break;
+                            default:
+                            break;
+                        }
+                    } else {
+                        var point = data['data']['point'];
+                        var pointsDiv = $('#rmInfo_' + dd_id).find('.points');
+                        var exists = false;
+                        var points_title = pointsDiv.find('.points_title');
+                        if(!points_title) {
+                            var type_zhs = {'sight' : '景　点', 'food' : '美　食', 'shopping' : '购　物'};
+                            pointsDiv.append('<span data-points="" data-point-type="' + _type + '" class="points_title">' + type_zhs[_type] + ':&nbsp;</span>');
+                            points_title = pointsDiv.find('.points_title');
+                            points_title.show();
+                        }
+                        var pids = pointsDiv.find('.points_title').attr('data-points').split(',');
+                        for(var i in pids) {
+                            var pid = pids[i];
+                            if(pid == point['_id']) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        pids = pids.join(',');
+                        if(!exists) {
+                            if(!pids) {
+                                pids = "";
+                            }
+                            pids += ',' + point['_id'];
+                            pointsDiv.find('.points_title').show().attr('data-points', pids);
+                            var show_zh_name = point['zh_name'] ? point['zh_name'] : point['en_name'];
+                            var show_en_name = point['en_name'] ? '(' + point['en_name'] + ')' : '';
+                            pointsDiv.find('ul.points_context').append('<li><a target="_blank" title="' + show_zh_name + show_en_name + '" href="/common/point/' + _type + '_' + point_id + '">' + show_zh_name + '' + '</a></li>');
+                            margin_points_li(pointsDiv.find('ul.points_context'));
+                        }
+                        $(".columnCancel").trigger('click');
+                    }
+                });
+            };
+            var del_pd_img = function(obj, _id, dd_id, img){
+                $.get('/plan/day_img?_id=' + _id + "&dd_id=" + dd_id + "&img_url=" + encodeURI(img), function(resp){
+                    var data = eval('(' + resp + ')');
+                    if(data['succ']) {
+                        var ic = $(obj).parents('.imgs_context');
+                        $(obj).parents('li').remove();
+                        if(!ic.find('li') || ic.find('li').length == 0) {
+                            ic.parents('.imgs').hide();
+                        }
+                    }
+                });
+            };
+        </script>
+    </head>
+    <body>
+        <div class="main">
+            <div class="container">
+                <div class="banner">
+                    <div><img src="/static/images/banner02.jpg" />
+                    </div>
+                    <div class="routeTitle">
+                        <h1 class="pb10 f32">${_context['plan']['name']}</h1>
+                        <p class="f20">
+                            <span id="p_start_day">${_context['plan']['start_date']}</span>&nbsp;&nbsp;至&nbsp;&nbsp;<span id="p_end_day">${_context['plan']['end_date']}</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span id="days">--</span>天行程
+                        </p>
+                    </div>
+                </div>
+
+                <div class="wraper">
+                    <div class="routeMain">
+                        <?py if 'day_details' in _context and _context['day_details']: ?>
+                        <?py dis="block" ?>
+                        <?py btn_clz="hideBtn" ?>
+                        <?py btn_html="收起" ?>
+                        <?py for detail in _context['day_details']: ?>
+                        <div class="rouTitle">
+                            <div class="routeDate">
+                                第<span class="dday"></span>天(${detail['day']})
+                            </div>
+                            <div class="routeAddCol">
+                                <div class="${btn_clz}" onclick="toggle_details(this);">
+                                    ${btn_html}
+                                </div>
+                                <div class="addColumn" data-pd_id="${detail['_id']}" data-pd_day="${detail['day']}">
+                                    新增栏目
+                                </div>
+                            </div>
+                        </div>
+                        <div class="routeMainCons" style="display: ${dis}" id="rmCons_${detail['_id']}">
+                            <?py if 'day_details' in detail and detail['day_details']: ?>
+                            <?py for d_detail in detail['day_details']: ?>
+
+                            <?py if not d_detail['enable']: ?>
+                            <?py continue ?>
+                            <?py #endif ?>
+
+                            <?py type = d_detail['_type'] ?>
+                            <?py if type == '0': ?> <!-- 交通 -->
+                            <div class="rmInfo" id="rmInfo_${d_detail['dd_id']}">
+                                <span class="title">交通</span>
+                                <p>
+                                    <div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="${d_detail['dest_region_id']}">${d_detail['dest_region_name']}<span></span></div></div>
+                                    <div class="txts">
+                                        <?py if 'txts' in d_detail and d_detail['txts']: ?>
+                                        <span class="txts_title">笔　记:&nbsp;</span><span style="color:red;font-size:14px;">#{d_detail['txts'][0]}</span>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="imgs">
+                                        <?py if 'imgs' in d_detail and d_detail['imgs']: ?>
+                                        <span class="imgs_title">图　片:</span>
+                                        <ul class="imgs_context">
+                                        <?py for img in d_detail['imgs']: ?>
+                                        <li class="img_li">
+                                        <p style="text-align:center;"><a href="${img}" target="_blank"><img src="${img}?imageView2/1/w/${img_thumb_w}" /></a></p>
+                                        <p style="text-align:center;display:none;" onclick="del_pd_img(this, '${detail['_id']}', '${d_detail['dd_id']}', '${img}');"><img src="/static/images/del.png" /></p>
+                                        </li>
+                                        <?py #endfor ?>
+                                        </ul>
+                                        <?py #endif ?>
+                                    </div>
+                                </p>
+                                <div class="ised">
+                                    <a class="rImg" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" href="javascript:void(0);">图片</a>
+                                    <a class="rSave" href="javascript:void(0);" style="display:none;" onclick="save_pd_detail('${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">保存笔记</a>
+                                    <a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, '${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">编辑笔记</a>
+                                    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail('${detail['_id']}', '${d_detail['dd_id']}');">删除</a>
+                                </div>
+                            </div>
+                            <?py elif type == '1': ?> <!-- 住宿 -->
+                            <div class="rmInfo" id="rmInfo_${d_detail['dd_id']}">
+                                <span class="title">住宿</span>
+                                <p>
+                                    <div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="${d_detail['dest_region_id']}">${d_detail['dest_region_name']}<span></span></div></div>
+                                    <div class="txts">
+                                        <?py if 'txts' in d_detail and d_detail['txts']: ?>
+                                        <span class="txts_title">笔　记:&nbsp;</span><span style="color:red;font-size:14px;">#{d_detail['txts'][0]}</span>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="imgs">
+                                        <?py if 'imgs' in d_detail and d_detail['imgs']: ?>
+                                        <span class="imgs_title">图　片:</span>
+                                        <ul class="imgs_context">
+                                        <?py for img in d_detail['imgs']: ?>
+                                        <li class="img_li">
+                                        <p style="text-align:center;"><a href="${img}" target="_blank"><img src="${img}?imageView2/1/w/${img_thumb_w}" /></a></p>
+                                        <p style="text-align:center;display:none;" onclick="del_pd_img(this, '${detail['_id']}', '${d_detail['dd_id']}', '${img}');"><img src="/static/images/del.png" /></p>
+                                        </li>
+                                        <?py #endfor ?>
+                                        </ul>
+                                        <?py #endif ?>
+                                    </div>
+                                </p>
+                                <div class="ised">
+                                    <a class="rImg" href="javascript:void(0);">图片</a>
+                                    <a class="rSave" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" href="javascript:void(0);" style="display:none;" onclick="save_pd_detail('${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">保存笔记</a>
+                                    <a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, '${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">编辑笔记</a>
+                                    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail('${detail['_id']}', '${d_detail['dd_id']}');">删除</a>
+                                </div>
+                            </div>
+                            <?py elif type == '2': ?> <!-- 景点 -->
+                            <div class="rmInfo" id="rmInfo_${d_detail['dd_id']}">
+                                <span class="title">景点</span>
+                                <p>
+                                    <div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="${d_detail['dest_region_id']}">${d_detail['dest_region_name']}<span></span></div></div>
+                                    <div class="points">
+                                        <?py if 'points' in d_detail and d_detail['points']: ?>
+                                        <span data-points="<?py pids=','.join(d_detail['points']) ?>${pids}" data-point-type="sight" class="points_title">景　点:&nbsp;</span><ul class="points_context"></ul>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="txts">
+                                        <?py if 'txts' in d_detail and d_detail['txts']: ?>
+                                        <span class="txts_title">笔　记:&nbsp;</span><span style="color:red;font-size:14px;">#{d_detail['txts'][0]}</span>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="imgs">
+                                        <?py if 'imgs' in d_detail and d_detail['imgs']: ?>
+                                        <span class="imgs_title">图　片:</span>
+                                        <ul class="imgs_context">
+                                        <?py for img in d_detail['imgs']: ?>
+                                        <li class="img_li">
+                                        <p style="text-align:center;"><a href="${img}" target="_blank"><img src="${img}?imageView2/1/w/${img_thumb_w}" /></a></p>
+                                        <p style="text-align:center;display:none;" onclick="del_pd_img(this, '${detail['_id']}', '${d_detail['dd_id']}', '${img}');"><img src="/static/images/del.png" /></p>
+                                        </li>
+                                        <?py #endfor ?>
+                                        </ul>
+                                        <?py #endif ?>
+                                    </div>
+                                </p>
+                                <div class="ised">
+                                    <a class="rPoint sel_point" href="javascript:void(0);" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" data-p-type="sight" data-region-id="${d_detail['dest_region_id']}">挑选景点</a>
+                                    <a class="rImg" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" href="javascript:void(0);">图片</a>
+                                    <a class="rSave" href="javascript:void(0);" style="display:none;" onclick="save_pd_detail('${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">保存笔记</a>
+                                    <a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, '${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">编辑笔记</a>
+                                    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail('${detail['_id']}', '${d_detail['dd_id']}');">删除</a>
+                                </div>
+                            </div>
+                            <?py elif type == '3': ?> <!-- 美食 -->
+                            <div class="rmInfo" id="rmInfo_${d_detail['dd_id']}">
+                                <span class="title">美食</span>
+                                <p>
+                                    <div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="${d_detail['dest_region_id']}">${d_detail['dest_region_name']}<span></span></div></div>
+                                    <div class="points">
+                                        <?py if 'points' in d_detail and d_detail['points']: ?>
+                                        <span data-points="<?py pids=','.join(d_detail['points']) ?>${pids}" data-point-type="food" class="points_title">美　食:&nbsp;</span><ul class="points_context"></ul>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="txts">
+                                        <?py if 'txts' in d_detail and d_detail['txts']: ?>
+                                        <span class="txts_title">笔　记:&nbsp;</span><span style="color:red;font-size:14px;">#{d_detail['txts'][0]}</span>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="imgs">
+                                        <?py if 'imgs' in d_detail and d_detail['imgs']: ?>
+                                        <span class="imgs_title">图　片:</span>
+                                        <ul class="imgs_context">
+                                        <?py for img in d_detail['imgs']: ?>
+                                        <li class="img_li">
+                                        <p style="text-align:center;"><a href="${img}" target="_blank"><img src="${img}?imageView2/1/w/${img_thumb_w}" /></a></p>
+                                        <p style="text-align:center;display:none;" onclick="del_pd_img(this, '${detail['_id']}', '${d_detail['dd_id']}', '${img}');"><img src="/static/images/del.png" /></p>
+                                        </li>
+                                        <?py #endfor ?>
+                                        </ul>
+                                        <?py #endif ?>
+                                    </div>
+                                </p>
+                                <div class="ised">
+                                    <a class="rPoint sel_point" href="javascript:void(0);" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" data-p-type="food" data-region-id="${d_detail['dest_region_id']}">挑选美食</a>
+                                    <a class="rImg" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" href="javascript:void(0);">图片</a>
+                                    <a class="rSave" href="javascript:void(0);" style="display:none;" onclick="save_pd_detail('${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">保存笔记</a>
+                                    <a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, '${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">编辑笔记</a>
+                                    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail('${detail['_id']}', '${d_detail['dd_id']}');">删除</a>
+                                </div>
+                            </div>
+                            <?py elif type == '4': ?> <!-- 购物 -->
+                            <div class="rmInfo" id="rmInfo_${d_detail['dd_id']}">
+                                <span class="title">购物</span>
+                                <p>
+                                    <div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="${d_detail['dest_region_id']}">${d_detail['dest_region_name']}<span></span></div></div>
+                                    <div class="points">
+                                        <?py if 'points' in d_detail and d_detail['points']: ?>
+                                        <span data-points="<?py pids=','.join(d_detail['points']) ?>${pids}" data-point-type="shopping" class="points_title">购　物:&nbsp;</span><ul class="points_context"></ul>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="txts">
+                                        <?py if 'txts' in d_detail and d_detail['txts']: ?>
+                                        <span class="txts_title">笔　记:&nbsp;</span><span style="color:red;font-size:14px;">#{d_detail['txts'][0]}</span>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="imgs">
+                                        <?py if 'imgs' in d_detail and d_detail['imgs']: ?>
+                                        <span class="imgs_title">图　片:</span>
+                                        <ul class="imgs_context">
+                                        <?py for img in d_detail['imgs']: ?>
+                                        <li class="img_li">
+                                        <p style="text-align:center;"><a href="${img}" target="_blank"><img src="${img}?imageView2/1/w/${img_thumb_w}" /></a></p>
+                                        <p style="text-align:center;display:none;" onclick="del_pd_img(this, '${detail['_id']}', '${d_detail['dd_id']}', '${img}');"><img src="/static/images/del.png" /></p>
+                                        </li>
+                                        <?py #endfor ?>
+                                        </ul>
+                                        <?py #endif ?>
+                                    </div>
+                                </p>
+                                <div class="ised">
+                                    <a class="rPoint sel_point" href="javascript:void(0);" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" data-p-type="shopping" data-region-id="${d_detail['dest_region_id']}">选择购物点</a>
+                                    <a class="rImg" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" href="javascript:void(0);">图片</a>
+                                    <a class="rSave" href="javascript:void(0);" style="display:none;" onclick="save_pd_detail('${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">保存笔记</a>
+                                    <a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, '${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">编辑笔记</a>
+                                    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail('${detail['_id']}', '${d_detail['dd_id']}');">删除</a>
+                                </div>
+                            </div>
+                            <?py elif type == '5': ?> <!-- 其他 -->
+                            <div class="rmInfo" id="rmInfo_${d_detail['dd_id']}">
+                                <span class="title">其他</span>
+                                <p>
+                                    <div class="desct_name"><div style="float:left;" class="dest_title">目的地:&nbsp;</div><div style="float:left;color:red;" class="dest_info" data-dest-id="${d_detail['dest_region_id']}">${d_detail['dest_region_name']}<span></span></div></div>
+                                    <div class="txts">
+                                        <?py if 'txts' in d_detail and d_detail['txts']: ?>
+                                        <span class="txts_title">笔　记:&nbsp;</span><span style="color:red;font-size:14px;">#{d_detail['txts'][0]}</span>
+                                        <?py #endif ?>
+                                    </div>
+                                    <div class="imgs">
+                                        <?py if 'imgs' in d_detail and d_detail['imgs']: ?>
+                                        <span class="imgs_title">图　片:</span>
+                                        <ul class="imgs_context">
+                                        <?py for img in d_detail['imgs']: ?>
+                                        <li class="img_li">
+                                        <p style="text-align:center;"><a href="${img}" target="_blank"><img src="${img}?imageView2/1/w/${img_thumb_w}" /></a></p>
+                                        <p style="text-align:center;display:none;" onclick="del_pd_img(this, '${detail['_id']}', '${d_detail['dd_id']}', '${img}');"><img src="/static/images/del.png" /></p>
+                                        </li>
+                                        <?py #endfor ?>
+                                        </ul>
+                                        <?py #endif ?>
+                                    </div>
+                                </p>
+                                <div class="ised">
+                                    <a class="rImg" data-pd-id="${detail['_id']}" data-dd-id="${d_detail['dd_id']}" href="javascript:void(0);">图片</a>
+                                    <a class="rSave" href="javascript:void(0);" style="display:none;" onclick="save_pd_detail('${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">保存笔记</a>
+                                    <a class="rEdit" href="javascript:void(0);" onclick="edit_pd_detail(this, '${detail['_id']}', '${d_detail['dd_id']}', '${d_detail['_type']}');">编辑笔记</a>
+                                    <a class="rDel" href="javascript:void(0);" onclick="del_pd_detail('${detail['_id']}', '${d_detail['dd_id']}');">删除</a>
+                                </div>
+                            </div>
+                            <?py #endif ?>
+
+                            <?py #endfor ?>
+                            <?py else: ?>
+                            您还没有记下任何内容，点击右上角"新增栏目"按钮，马上编辑吧。
+                            <?py #endif ?>
+                        </div>
+                        <?py dis="none" ?>
+                        <?py btn_clz="showBtn" ?>
+                        <?py btn_html="展开" ?>
+                        <?py #endfor ?>
+                        <?py #endif ?>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!--弹窗 start-->
+        <div id="addNewColBlack"></div>
+        <div id="addNewColInfo">
+            <p class="title">
+                新增栏目
+            </p>
+            <div class="newInfo">
+                <input type="hidden" id="dest_region_id" />
+                <input type="hidden" id="pd_day" />
+                <input type="hidden" id="pd_id" />
+                <input type="hidden" id="pd_type" value="0"/>
+                <h3 class="mt10 mb5">去往目的地</h3>
+                <div class="colSelect edit_div">
+                    <input id="dest_region_name" value=""/>
+                </div>
+                <div class="colType">
+                    <ul>
+                        <li class="cur">
+                            交通
+                        </li>
+                        <li>
+                            住宿
+                        </li>
+                        <li>
+                            景点
+                        </li>
+                        <li>
+                            美食
+                        </li>
+                        <li>
+                            购物
+                        </li>
+                        <li>
+                            其他
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="newBtn">
+                <a href="javascript:void(0);" onclick="plan_day();">确定</a>
+                <a class="columnCancel" href="javascript:void(0);">取消</a>
+            </div>
+        </div>
+        <!--弹窗 end-->
+
+        <!--弹窗 start-->
+        <div id="addNewColBlack_sight"></div>
+        <div id="addNewColInfo_sight">
+            <input type="hidden" id="p_pd_id" />
+            <input type="hidden" id="p_dd_id" />
+            <input type="hidden" id="point_type" />
+            <input type="hidden" id="point_id" />
+            <div class="newInfo">
+                <h3 class="mt10 mb5" id="point_title"></h3>
+                <div class="colSelect edit_div">
+                    <input id="point_name" value="" placeholder=""/>
+                </div>
+            </div>
+            <div class="newBtn">
+                <a href="javascript:void(0);" onclick="add_point('sight');">确定</a>
+                <a class="columnCancel" href="javascript:void(0);">取消</a>
+            </div>
+        </div>
+        <!--弹窗 end-->
+        <!--弹窗 start-->
+        <div id="addNewColBlack_food"></div>
+        <div id="addNewColInfo_food">
+            <input type="hidden" id="p_pd_id" />
+            <input type="hidden" id="p_dd_id" />
+            <input type="hidden" id="point_type" />
+            <input type="hidden" id="point_id" />
+            <div class="newInfo">
+                <h3 class="mt10 mb5" id="point_title"></h3>
+                <div class="colSelect edit_div">
+                    <input id="point_name" value="" placeholder=""/>
+                </div>
+            </div>
+            <div class="newBtn">
+                <a href="javascript:void(0);" onclick="add_point('food');">确定</a>
+                <a class="columnCancel" href="javascript:void(0);">取消</a>
+            </div>
+        </div>
+        <!--弹窗 end-->
+        <!--弹窗 start-->
+        <div id="addNewColBlack_shopping"></div>
+        <div id="addNewColInfo_shopping">
+            <input type="hidden" id="p_pd_id" />
+            <input type="hidden" id="p_dd_id" />
+            <input type="hidden" id="point_type" />
+            <input type="hidden" id="point_id" />
+            <div class="newInfo">
+                <h3 class="mt10 mb5" id="point_title"></h3>
+                <div class="colSelect edit_div">
+                    <input id="point_name" value="" placeholder=""/>
+                </div>
+            </div>
+            <div class="newBtn">
+                <a href="javascript:void(0);" onclick="add_point('shopping');">确定</a>
+                <a class="columnCancel" href="javascript:void(0);">取消</a>
+            </div>
+        </div>
+        <!--弹窗 end-->
+
+        <!--弹窗 start-->
+        <div id="addNewColBlack_upload"></div>
+        <div id="addNewColInfo_upload">
+            <input type="hidden" id="_id" />
+            <input type="hidden" id="dd_id" />
+            <p class="title">
+                        上传图片<em><img src="/static/css/img/ico_del2.png"></em>
+            </p>
+            <div class="newInfo" style="height:100%;"></div>
+        </div>
+        <!--弹窗 end-->
+    </body>
+</html>

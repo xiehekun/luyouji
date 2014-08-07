@@ -1,0 +1,118 @@
+/**
+* Author: Herry Lau
+* Email: sfit0209@sf-express.com
+* Date: 2014-07-08
+*/
+
+.main{width:100%; height:100%; background:url(img/bg.jpg) repeat-x; zoom:1;}
+.container{width:960px; margin:0 auto;}
+.banner{position:relative; width:960px; height:440px;}
+.routeTitle{position:absolute; left:0; bottom:103px; padding:20px 50px 10px 20px; color:#fff; background:rgba(0,0,0,0.22) none repeat scroll!important; background:#000; filter:Alpha(opacity=22);}
+.routeTitle h1,.routeTitle p{position:relative;}
+
+.wraper{width:960px; margin:10px auto; overflow:hidden; zoom:1;}
+.routeCons{width:969px; height:198px; margin:0 0 4px; color:#fff;}
+.routeCons a{position:relative; float:left; width:277px; height:158px; margin:0 5px 0 0; padding:20px; background-color:#ddd; color:#fff;}
+.firstChild a.addNewRoute{width:317px; height:58px; padding:140px 0 0;font-size:26px; color:#fff; text-align:center; background:#ff6691 url(img/img_add.png) no-repeat 50% 20%; cursor:pointer;}
+.routeCons a div{padding:0 0 20px; font-size:26px; border-bottom:1px solid #fff;}
+.routeCons a p{padding:15px 0 0; font-size:20px;}
+.routeCons a.routeNow{background-color:#66bcff;}
+.routeCons a.routeOver{background-color:#83c9ff;}
+.routeNow em, .routeOver em{position:absolute; right:6px; top:6px; display:block; width:17px; height:16px; background:url(img/ico_del.png) no-repeat;}
+.routeNow em:hover, .routeOver em:hover{background:url(img/ico_del_1.png) no-repeat;}
+/*new add route popup s*/
+#newAddBlack, #regBlack, #addNewColBlack{position:fixed; left:0; top:0; display:none; width:100%; height:100%; background-color:#333; filter:Alpha(opacity=50); -moz-opacity:.5; opacity:0.5; z-index:1;}
+#newAddCons, #regMain{position:fixed; left:25%; top:10%; display:none; width:536px; height:388px;  background-color:#fff; z-index:2;}
+#newAddCons .title, #regMain .title, #addNewColInfo .title{padding:10px 20px; font-size:26px; background-color:#66bcff; color:#fff;}
+.newInfo, .newBtn{padding:10px 20px 0; font-size:20px; color:#66bcff;}
+.newInfo input{width:483px; height:55px; padding:0 3px; line-height:55px; border:2px solid #66bcff;}
+.newInfo div span{display:inline-block; width:215px; height:55px; border:2px solid #66bcff; background:url(img/ico_01.png) no-repeat 96% 50%;}
+.newBtn a{display:inline-block; width:196px; height:48px; margin:25px 0 0 30px; line-height:48px; font-size:26px; background-color:#66bcff; color:#fff; text-align:center;}
+/*new add route popup e*/
+
+/* login & register s*/
+.loginCons{float:left; width:616px; height:259px; padding:30px 0 12px 24px; background:#ff6691; color:#fff;}
+.loginCons table th,.loginCons table td{padding-bottom:15px; font-size:30px;}
+.loginCons table input{width:470px; height:60px; padding:3px; line-height:60px; border:0; background-color:#fff;}
+.loginBtn{display:block; width:549px; height:73px; margin:15px 0 0 15px; line-height:73px; border:2px solid #fff; text-align:center; border-radius:10px; color:#fff;}
+.regCons{float:right; width:316px;}
+.regCons a{display:block; width:316px; height:73px; margin:0 0 3px 0; line-height:73px; background-color:#66bcff; font-size:30px; color:#fff; text-align:center;}
+.loginQQ{background:#66c7ff url(img/loginQQ.png) no-repeat center;}
+.loginSina{background:#66c7ff url(img/loginSina.png) no-repeat center;}
+/*=====*/
+#regMain{width:527px!important; height:476px!important;}
+#regMain .title em{position:absolute; right:12px; top:6px; cursor:pointer;}
+.registerInfo th, .registerInfo td{padding:20px 0 0; font-size:20px;}
+.registerInfo th{padding-right:20px;}
+.registerInfo input{width:359px; height:56px; padding:0 12px; font-size:20px; font-family:"microsoft yahei";}
+.regOkBtn{display:block; width:175px; height:57px; margin:60px auto 0; text-align:center; line-height:57px; border:2px solid #rmInfo; color:#66bcff; font-size:20px;}
+/* login & register e*/
+
+.routeMain{font-size:18px; color:#fff; overflow:hidden; zoom:1;}
+.rouTitle{width:960px; height:54px; margin:0 0 10px;}
+.routeDate{float:left; width:230px; height:54px; border-right:1px solid #fff; background-color:#f66; line-height:54px; text-align:center;}
+.routeAddCol{position:relative; float:right; width:729px; height:54px; background-color:#66bcff; line-height:54px;}
+.routeAddCol div{display:table-cell; float:right; height:20px; line-height:20px; cursor:pointer;}
+.addColumn{margin:16px 0 0; padding:0 20px 0 30px; border-right:1px solid #fff; background:url(img/ico_add.png) no-repeat left center;}
+.hideBtn{margin:16px 0 0 20px; padding:0 20px 0 30px;  background:url(img/ico_03.png) no-repeat left center;}
+.showBtn{margin:16px 0 0 20px; padding:0 20px 0 30px;  background:url(img/ico_04.png) no-repeat left center;}
+.routeMainCons{margin:-10px 0 10px; padding:60px 0; text-align:center; background-color:#fff; font-size:26px; color:#666;}
+.routeMainInfo{position:relative; padding:20px 20px 10px;}
+.rmInfo{position:relative; margin:10px 0 40px; padding:15px 5px 50px 10px; border:2px solid #66bcff; font-size:18px; text-align:left;}
+.rmInfo span.title{position:absolute; top:-25px; left:420px; display:block; width:98px; height:28px; background:#fff; color:#f66; font-size:26px; text-align:center;}
+.ised{position:absolute; right:10px; bottom:5px;}
+.ised a{margin:0 0 0 20px; font-size:15px; color:#66bcff;}
+.rImg{padding:0 0 0 25px; background:url(img/ico_img.png) no-repeat left center;}
+.rSave{padding:0 0 0 25px; color:#f66!important; background:url(img/ico_save.png) no-repeat left center;}
+.rEdit{padding:0 0 0 25px; background:url(img/ico_edit.png) no-repeat left center;}
+.rDel{padding:0 0 0 25px; background:url(img/ico_del3.png) no-repeat left center;}
+.addDayDel{position:absolute; right:20px; bottom:15px; font-size:18px; color:#66bcff;}
+.addDay{display:inline-block;float:right; padding: 0 0 0 20px;  background:url(img/ico_add2.png) no-repeat left center; cursor:pointer;}
+.delDay{display:inline-block;float:right; margin:0 0 0 20px; padding: 0 0 0 20px; background:url(img/ico_del3.png) no-repeat left center; cursor:pointer;}
+
+#addNewColInfo{position:fixed; left:25%; top:20%; display:none; width:532px; padding-bottom:15px; background-color:#fff; overflow:hidden; zoom:1; z-index:2;}
+.colSelect span{width:492px!important; height:60px!important; line-height:60px!important;}
+.colType ul{width:520px; overflow:hidden; zoom:1;}
+.colType ul li{float:left; width:159px; height:62px; margin:10px 8px 0 0; line-height:62px; text-align:center; background-color:#aaa; color:#fff; font-size:30px;}
+.colType ul li.cur{background-color:#66bcff;}
+.columnOk{display:block; width:175px; height:57px; margin:25px auto 0; font-size:22px; background:#fff; line-height:57px; border:2px solid #66bcff; color:#66bcff; text-align:center;}
+
+.bgWhite{background:#fff;}
+.detailHead{padding:20px 0; background:none; border-bottom:1px solid #d7d7d7; box-shadow:0 2px 2px rgba(0,0,0,0.05);}
+.dHeadCons{width:960px; margin:0 auto;}
+.dHeadTitleEn{padding:4px 0 12px; font-size:36px; line-height:38px; word-break:break-all;}
+.dHeadTitleCn{font-size:30px; line-height:32px;}
+.dHeadTitleEn a, .dHeadTitleCn a{color:#f66;}
+.leftSide{float:left; width:660px; overflow:hidden; zoom:1;}
+.leftSideImg{position:relative; border:1px solid #ddd; padding:15px; background:#fff; box-shadow:0 0 5px rgba(0,0,0,0.1); overflow:hidden; zoom:1;}
+.lsImage{position:relative; float:left; margin:0 25px 0 0; width:270px;}
+.lsDetailInfo ul li{padding-left:72px; line-height:24px; overflow:hidden; zoom:1;}
+.lsDetailInfo ul li span{float:left; width:72px; margin-left:-72px; text-align:right;}
+.lsDetailInfo ul li p a{color:#f66;}
+.lsDetailInfo ul li p a:hover, .dpUserCons .text a:hover{text-decoration:underline;}
+.lSideTips{padding:10px 15px; background:#fffbcc; border:1px solid #f1d152; line-height:24px; font-size:14px; margin:25px 0 30px;}
+.dianPing{margin:50px auto 0; overflow:hidden; zoom:1;}
+.dianPing h2.title{float:left; font-size:18px; line-height:20px; color:#323232;}
+.dpInfo{margin:20px auto; border-top:1px solid #ccc; overflow:hidden; zoom:1;}
+.dpInfo li{padding:30px 0; border-bottom:1px solid #ccc; overflow:hidden; zoom:1;}
+.dpUserImg{float:left; width:48px;}
+.dpUserImg img{display:block; border-radius:50px;}
+.dpUserCons{float:right; width:602px;}
+.dpUserCons .text{font-size: 14px;word-break: break-all;}
+.dpUserCons .text a{color:#66bcff;}
+.myDianPing{margin:30px 0; overflow:hidden; zoom:1;}
+.myDianPing .title{margin-bottom: 20px;font-size: 18px;line-height: 20px;color: #323232;}
+.myDPCons{float:right; padding:0 0 0 55px;}
+.myDPCons .title{float: left;width: 55px;margin-left: -55px;text-align: right;font-size: 14px;font-weight: 700;}
+.myDPCons textarea{width:540px; height:120px; padding:3px 7px; min-height:110px; border:1px solid #c0c0c0; color:#999; font:14px/20px "microsoft yahei";}
+.myDSubmit{float:right; display:inline-block; width:60px; height:30px; line-height:30px; text-align:center; background:#f66; border-radius:5px; color:#fff;}
+
+.rightSide{float:right; width:270px; overflow:hidden; zoom:1;}
+.leftSideTitle, .mapTitle{position:relative; width:100%; height:20px; margin:20px 0 10px;}
+.leftSideTitle h2, .mapTitle h2{font-size:18px; line-height:20px; color:#323232;}
+
+
+
+
+
+

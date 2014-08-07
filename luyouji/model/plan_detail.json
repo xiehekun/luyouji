@@ -1,0 +1,18 @@
+{
+    "_id" : "sdjkfjdsklfjkldsjdsfj",
+    "p_id" : "sjdj3llh1llk5b6lkl6",
+    "day" : "2014-07-17",
+    "day_details" : [
+        {
+            "_type" : "0", //key means. 0: 交通, 1:住宿, 2:景点, 3:美食, 4:购物,  5:其他
+            "dd_id" : "dshfkljsdlfjdl",
+            "dest_region_id" : "g5jkj1hl6b3hj6m4nh",
+            "dest_region_name" : "g5jkj1hl6b3hj6m4nh",
+            "dest_input_type" : 0,
+            "imgs" : ["/xxx/bbb/fff.jpg"],
+            "points" : ["dgdfgdfgfd55", "sdgsdg54343"],
+            "txts" : ["dsgdfgdfgfdgdfgfdgdf"],
+            "enable" : true
+        }
+    ]
+}
