@@ -73,3 +73,12 @@ def load_data(url, data=None, decode=True, return_url=False, encoding="utf-8"):
     if return_url:
         return (return_data, url)
     return return_data
+
+def build_req_meta(resp, append={}):
+    n_meta = {}
+    for k in resp.meta:
+        n_meta[k] = resp.meta[k]
+    for k in append:
+        n_meta[k] = append[k]
+    return n_meta
+

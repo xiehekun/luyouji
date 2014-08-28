@@ -11,7 +11,7 @@ sys.setdefaultencoding('utf-8')  # @UndefinedVariable
 import exception
 from scrapy.selector import Selector
 from scrapy.http.request import Request
-from utils import item_generators, _md5, decorators
+from utils import item_generators, _md5, decorators, build_req_meta
 import settings
 import re
 from scrapy.http.request.form import FormRequest
@@ -51,7 +51,7 @@ class QY(Spider):
             country_en_name = cn.xpath('span/child::text()').extract()[0].strip()
             yield continent_zh_name, continent_en_name, country_url, country_zh_name, country_en_name
 
-    @decorators.handle_err_and_sleep()
+    @decorators.handle_err_and_sleep(sleep=False)
     def parse(self, resp):
         '''
         parse http://place.qyer.com/, get all continents and countries.
@@ -117,7 +117,7 @@ class QY(Spider):
                 url = n.xpath('@href').extract()[0]
                 yield zh_name, en_name, url
 
-    @decorators.handle_err_and_sleep()
+    @decorators.handle_err_and_sleep(sleep=False)
     def parse_country(self, resp):
         '''
         parse the country page, and get all regions for current country.
@@ -134,21 +134,16 @@ class QY(Spider):
                 _type = clses[cls]
                 for region in regions:
                     item = item_generators.gene_region_no_guide(region[0], region[1], _type, c_id)
-                    resp.meta['r_id'] = item['_id']
+                    r_id = item['_id']
                     yield item
                     url = region[2]
-#                     resp.meta['item'] = item
-#                     yield Request(url=url, meta=resp.meta, callback=self.parse_region)
-#                     resp.meta.pop('item')
 
                     for point in settings.qyer_region_crawl_points:
                         r_url = (url + point) if url.endswith('/') else (url + '/' + point)
-#                         callback = eval('self.parse_region_' + point)
-#                         yield Request(url=url, meta=resp.meta, callback=callback)
-                        resp.meta['point_type'] = point
-                        yield Request(url=r_url, meta=resp.meta, callback=self.parse_region_points)
+                        point_type = point
+                        yield Request(url=r_url, meta=build_req_meta(resp, {'r_id' : r_id, 'point_type' : point_type}), callback=self.parse_region_points)
 
-    @decorators.handle_err_and_sleep()
+    @decorators.handle_err_and_sleep(sleep=False)
     def parse_region_points(self, resp):
         '''
         parse sight, food, shopping points.
@@ -156,19 +151,20 @@ class QY(Spider):
         page = 1 if not 'page' in resp.meta else resp.meta['page']
         point_nodes = []
         next_nodes = None
+        append_meta = {}
         if page == 1: # if true, means current page is sync http request, so can get some useful information two next pages.
             hxs = Selector(resp)
             read_more_url = hxs.xpath('//p[@class="readMore"]/a/@href').extract()
             if read_more_url:
-                yield Request(read_more_url[0], meta=resp.meta, callback=self.parse_region_guide)
+                yield Request(read_more_url[0], meta=build_req_meta(resp), callback=self.parse_region_guide)
 
             point_nodes = hxs.xpath('//div[@id="poilistdiv"]//li/h3[@class="title"]/a')
             next_nodes = hxs.xpath('//div[@id="poilistdiv"]//a[@data-bn-ipg="pages-5"]')
             content = resp._get_body()
             m = re.search("var categoryid = '([0-9]+)';", content)
-            resp.meta['point_cateid'] = m.group(1)
+            append_meta['point_cateid'] = m.group(1)
             m = re.search("var belong_id = '([0-9]+)';", content)
-            resp.meta['point_id'] = m.group(1)
+            append_meta['point_id'] = m.group(1)
         else: # if true, means current page is async http request
             data = eval('u' + '"""' + resp._get_body().strip() + '"""').replace('\\', '').\
                     replace('\r', '').replace('\n', '').replace('\t', '').replace("'", '"').\
@@ -188,28 +184,30 @@ class QY(Spider):
 #                 yield Request(url=url, meta=resp.meta, callback=callback)
         for point_node in point_nodes:
             url = point_node.xpath('@href').extract()[0]
-            yield Request(url=url, meta=resp.meta, callback=self.parse_point)
+            yield Request(url=url, meta=build_req_meta(resp, append_meta), callback=self.parse_point)
 
         if next_nodes:
             url = 'http://place.qyer.com/ajax.php'
-            resp.meta['page'] = page + 1
+            append_meta['page'] = page + 1
+            new_req_meta = build_req_meta(resp, append_meta)
             _req_body = {'type' : 'city', 'order' : '0', 'action' : 'ajaxpoi', 'page' : str(page + 1), 'pagesize' : '16'}
-            _req_body['id'] = str(resp.meta['point_id'])
-            _req_body['cateid'] = str(resp.meta['point_cateid'])
-            yield FormRequest(url, callback=self.parse_region_points, formdata=_req_body, meta=resp.meta)
+            _req_body['id'] = str(new_req_meta['point_id'])
+            _req_body['cateid'] = str(new_req_meta['point_cateid'])
+            yield FormRequest(url, callback=self.parse_region_points, formdata=_req_body, meta=new_req_meta)
 
-    @decorators.handle_err_and_sleep()
+    @decorators.handle_err_and_sleep(sleep=False)
     def parse_region_guide(self, resp):
         hxs = Selector(resp)
         guide = hxs.xpath('//div[@class="pla_main2"]//div[@class="pla_txtquote"]/p//child::text()').extract()
         if guide:
             yield item_generators.gene_region_guide(resp.meta['r_id'], ''.join(guide), resp.meta['point_type'])
 
-    @decorators.handle_err_and_sleep()
+    @decorators.handle_err_and_sleep(sleep=False)
     def parse_point(self, resp):
         r_id = resp.meta['r_id'] # region id
         _type = resp.meta['point_type']
 
+        append_meta = {}
         hxs = Selector(resp)
         names = hxs.xpath('//a[@data-bn-ipg="place-poi-top-title"]/child::text()').extract()
         if len(names) == 1:
@@ -225,10 +223,10 @@ class QY(Spider):
             zh_name = names[1]
 
         point_id = _md5(r_id + (en_name if en_name else zh_name) + _type)
-        resp.meta['point_id'] = point_id
+        append_meta['point_id'] = point_id
         pic_url = hxs.xpath('//a[@data-bn-ipg="place-poidetail-cover"]/@href').extract()
         if pic_url:
-            yield Request(url=pic_url[0], meta=resp.meta, callback=self.parse_point_pics)
+            yield Request(url=pic_url[0], meta=build_req_meta(resp, append_meta), callback=self.parse_point_pics)
         coordinate = None
         map_src = hxs.xpath('//div[@class="pla_sidemap"]//img/@src').extract()
         if map_src: # 41.889019,12.480851
@@ -272,7 +270,7 @@ class QY(Spider):
         if not details:
             raise exception.NoNodeParsed('no details nodes been parsed.')
 
-    @decorators.handle_err_and_sleep()
+    @decorators.handle_err_and_sleep(sleep=False)
     def parse_point_pics(self, resp):
         hxs = Selector(resp)
         img_urls = hxs.xpath('//a[@class="_jsbigphotoinfo"]/img/@src').extract()
@@ -284,200 +282,6 @@ class QY(Spider):
             img_url = img_url[:i] + '/980x576'
             r_img_urls.append(img_url)
         yield item_generators.gene_point_imgs(resp.meta['point_id'], r_img_urls)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##########################################################################################################
-
-    def parse_region_food(self, resp):
-        hxs = Selector(resp)
-        page = 1 if not 'page' in resp.meta else resp.meta['page']
-        food_nodes = []
-        next_nodes = None
-        if page == 1:
-            read_more_url = hxs.xpath('//p[@class="readMore"]/a/@href').extract()
-            if read_more_url:
-                resp.meta['point_type'] = settings.qyer_region_crawl_food
-                yield Request(read_more_url[0], meta=resp.meta, callback=self.parse_region_guide)
-
-            food_nodes = hxs.xpath('//div[@id="poilistdiv"]//li/h3[@class="title"]/a')
-            next_nodes = hxs.xpath('//div[@id="poilistdiv"]//a[@data-bn-ipg="pages-5"]')
-            content = resp._get_body()
-            m = re.search("var categoryid = '([0-9]+)';", content)
-            resp.meta['cateid'] = m.group(1)
-            m = re.search("var belong_id = '([0-9]+)';", content)
-            resp.meta['id'] = m.group(1)
-        else:
-            data = eval('u' + '"""' + resp._get_body() + '"""').replace('\\', '').\
-                    replace('\r', '').replace('\n', '').replace('\t', '').replace("'", '"').\
-                    replace('</div>"}}', "</div>'}}").replace('"data":{"html":"', """"data":{"html":'""")
-
-            data = eval(data)
-            food_nodes = data['data']['html'].xpath('//li/h3[@class="title"]/a')
-            next_nodes = hxs.xpath('//a[@data-bn-ipg="pages-5"]')
-        for food_node in food_nodes:
-            url = food_node.xpath('@href').extract()[0]
-            yield Request(url=url, meta=resp.meta, callback=self.parse_sight)
-
-        if next_nodes:
-            url = 'http://place.qyer.com/ajax.php'
-            resp.meta['page'] = page + 1
-            _req_body = {'type' : 'city', 'order' : 0, 'action' : 'ajaxpoi', 'page' : page + 1, 'pagesize' : 16}
-            _req_body['id'] = resp.meta['id']
-            _req_body['cateid'] = resp.meta['cateid']
-#             yield Request(url, callback=self.parse_region_sight, method='POST', body=_json(_req_body), meta=resp.meta)
-            yield FormRequest(url, callback=self.parse_region_sight, formdata=_req_body, meta=resp.meta)
-
-
-
-    def parse_region_shopping(self, resp):
-#         hxs = Selector(resp)
-        pass
-
-
-    def parse_region_sight(self, resp):
-        '''
-        parse a region sight list page, yield requests to crawl the page which contain the specific information about sight.
-        '''
-        hxs = Selector(resp)
-        page = 1 if not 'page' in resp.meta else resp.meta['page']
-        sight_nodes = []
-        next_nodes = None
-        if page == 1:
-            read_more_url = hxs.xpath('//p[@class="readMore"]/a/@href').extract()
-            if read_more_url:
-                resp.meta['point_type'] = settings.qyer_region_crawl_sight
-                yield Request(read_more_url[0], meta=resp.meta, callback=self.parse_region_guide)
-
-            sight_nodes = hxs.xpath('//div[@id="poilistdiv"]//li/h3[@class="title"]/a')
-            next_nodes = hxs.xpath('//div[@id="poilistdiv"]//a[@data-bn-ipg="pages-5"]')
-            content = resp._get_body()
-            m = re.search("var categoryid = '([0-9]+)';", content)
-            resp.meta['cateid'] = m.group(1)
-            m = re.search("var belong_id = '([0-9]+)';", content)
-            resp.meta['id'] = m.group(1)
-        else:
-            data = eval('u' + '"""' + resp._get_body() + '"""').replace('\\', '').\
-                    replace('\r', '').replace('\n', '').replace('\t', '').replace("'", '"').\
-                    replace('</div>"}}', "</div>'}}").replace('"data":{"html":"', """"data":{"html":'""")
-
-            data = eval(data)
-            sight_nodes = data['data']['html'].xpath('//li/h3[@class="title"]/a')
-            next_nodes = hxs.xpath('//a[@data-bn-ipg="pages-5"]')
-        for sight_node in sight_nodes:
-            url = sight_node.xpath('@href').extract()[0]
-#             name = sight_node.xpath('@href').extract()[0]
-#             resp.meta['s_n'] = name
-            yield Request(url=url, meta=resp.meta, callback=self.parse_sight)
-
-        if next_nodes:
-            url = 'http://place.qyer.com/ajax.php'
-            resp.meta['page'] = page + 1
-            _req_body = {'type' : 'city', 'order' : 0, 'action' : 'ajaxpoi', 'page' : page + 1, 'pagesize' : 16}
-            _req_body['id'] = resp.meta['id']
-            _req_body['cateid'] = resp.meta['cateid']
-#             yield Request(url, callback=self.parse_region_sight, method='POST', body=_json(_req_body), meta=resp.meta)
-            yield FormRequest(url, callback=self.parse_region_sight, formdata=_req_body, meta=resp.meta)
-
-    def parse_sight(self, resp):
-        '''
-        parse a specific sight page, get full information.
-        '''
-        hxs = Selector(resp)
-        names = hxs.xpath('//a[@data-bn-ipg="place-poi-top-title"]/child::text()').extract()
-        en_name = names[0]
-        r_id = resp.meta['r_id'] # region id
-        sight_id = _md5(r_id + en_name)
-        resp.meta['sight_id'] = sight_id
-
-        pic_url = hxs.xpath('//a[@data-bn-ipg="place-poidetail-cover"]/@href').extract()
-        if pic_url:
-            yield Request(url=pic_url[0], meta=resp.meta, callback=self.parse_sight_pics)
-        zh_name = names[1]
-
-        coordinate = None
-        map_src = hxs.xpath('//div[@class="pla_sidemap"]/img/@src').extract()
-        if map_src: # 41.889019,12.480851
-            m = re.search('http://static.qyer.com/images/place5/icon_mapno_big.png\|([0-9.,]+)\&sensor=false', map_src)
-            if m:
-                coordinate = m.group(1)
-
-        desc = None
-        desc_nodes = hxs.xpath('//div[@id="summary_box"]')
-        if desc_nodes:
-            desc = desc_nodes[0].xpath('child::text()').extract()[0]
-
-        details = {}
-        detail_nodes = hxs.xpath('//ul[@class="pla_textdetail_list"]/li')
-        for detail_node in detail_nodes:
-            k = detail_node.xpath('span[@class="tit"]/child::text()').extract()[0].replace(u'：', '')
-            txt_node = detail_node.xpath('p[@class="txt"]')
-            tags = txt_node.xpath('a/child::text()').extract()
-            if tags:
-                v = tags
-            else:
-                v = txt_node.xpath('child').extract()[0]
-
-            details[k] = v
-
-        yield item_generators.gene_sight(sight_id, resp.meta['c_id'], r_id, en_name, zh_name, coordinate, desc, details)
-
-        comments = hxs.xpath('//div[@id="poicommentlist"]/div[@class="pl_yelp"]//p[@class="text"]/child').extract()
-        if comments:
-            yield item_generators.gene_sight_comment(sight_id, comments)
-
-
-    def parse_sight_pics(self, resp):
-        hxs = Selector(resp)
-        img_urls = hxs.select('//a[@class="_jsbigphotoinfo"]/img/@src').extract()
-        if img_urls and len(img_urls) > 10:
-            img_urls = img_urls[:10]
-        for img_url in img_urls:
-            i = img_url.rindex('/')
-            img_url = img_url[:i] + '/980x576'
-            yield item_generators.gene_sight_imgs(resp.meta['sight_id'], img_urls)
-
-    def parse_food(self, resp):
-        pass
-
-    def parse_shopping(self, resp):
-        pass
-
 
     def __str__(self):
         return self.name
