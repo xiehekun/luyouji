@@ -7,6 +7,8 @@ import smtplib
 import traceback
 import cookielib
 import urllib2
+import httplib
+import urllib
 try:
     from hashlib import md5
 except ImportError:
@@ -62,23 +64,28 @@ def init_opener(host=None):
         opener.addheaders.append(('Host', host))
     urllib2.install_opener(opener);
 
-def load_data(url, data=None, decode=True, return_url=False, encoding="utf-8"):
+def load_data(url, data={}, decode=True, return_url=False, encoding="utf-8"):
     init_opener()
+    req = urllib2.Request(url)
+    req.add_header("Content-Type", 'application/x-www-form-urlencoded')
+    data = urllib.urlencode(data)
     opener = urllib2.build_opener()
-    page = opener.open(fullurl=url, data=data)
-    return_data = page.read()
-    url = page.url
+    response = opener.open(req, data)
+    return_data = response.read()
     if decode:
         return_data = return_data.decode(encoding, 'ignore')
     if return_url:
+        url = response.url
         return (return_data, url)
-    return return_data
+    return return_data, response.getcode()
 
-def build_req_meta(resp, append={}):
+def build_req_meta(resp, append={}, pop_keys=[]):
     n_meta = {}
     for k in resp.meta:
         n_meta[k] = resp.meta[k]
     for k in append:
         n_meta[k] = append[k]
+    if pop_keys:
+        for k in pop_keys:
+            n_meta.pop(k, None)
     return n_meta
-

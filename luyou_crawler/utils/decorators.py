@@ -45,9 +45,9 @@ def handle_err_and_sleep(min_secs=1, max_secs=3, sleep=True):
                             time.sleep(sleep_time)
                             crawler.anti_crawler_warning = False
                         mutex.release()
-                    if hasattr(crawler, 'anti_crawler_kw') and crawler.anti_crawler_kw in resp._get_body():
-                        resp.meta.pop('proxy', None)
-                        yield Request(url=resp._get_url(), meta=resp.meta, callback=fn, dont_filter=True)
+                if hasattr(crawler, 'anti_crawler_kw') and crawler.anti_crawler_kw in resp._get_body():
+                    resp.meta.pop('proxy', None)
+                    yield Request(url=resp._get_url(), meta=resp.meta, callback=fn, dont_filter=True)
                 else:
                     results = fn(*args, **kwargs)
                     if results:

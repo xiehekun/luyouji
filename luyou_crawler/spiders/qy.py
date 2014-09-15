@@ -126,7 +126,8 @@ class QY(Spider):
         '''
         hxs = Selector(resp)
         c_id = resp.meta['c_id']
-        clses = {'line' : settings.region_city_type, 'arealist' : settings.region_area_type}
+#         clses = {'line' : settings.region_city_type, 'arealist' : settings.region_area_type}
+        clses = {'line' : settings.region_city_type}
         for cls in clses:
             nodes = hxs.xpath('//div[@id="allcitylist"]/div[@class="%s"]//li//a' % cls)
             regions = self.get_region(nodes, cls)
@@ -190,7 +191,7 @@ class QY(Spider):
             url = 'http://place.qyer.com/ajax.php'
             append_meta['page'] = page + 1
             new_req_meta = build_req_meta(resp, append_meta)
-            _req_body = {'type' : 'city', 'order' : '0', 'action' : 'ajaxpoi', 'page' : str(page + 1), 'pagesize' : '16'}
+            _req_body = {'typename' : 'city', 'orderby' : '0', 'action' : 'ajaxpoi', 'page' : str(page + 1), 'pagesize' : '16'}
             _req_body['id'] = str(new_req_meta['point_id'])
             _req_body['cateid'] = str(new_req_meta['point_cateid'])
             yield FormRequest(url, callback=self.parse_region_points, formdata=_req_body, meta=new_req_meta)
